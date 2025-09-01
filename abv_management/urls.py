@@ -18,12 +18,16 @@ from django.contrib import admin
 from django.urls import path, include
 from users.views import custom_login, verify_mfa, mfa_method
 from users.views import homepage  # ✅ or from whatever app your homepage view is in
-
+from users.views import signup
+from django.contrib.auth import views as auth_views
+from users.views import CustomLoginView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', homepage, name='homepage'),  # 👈 this sets up your homepage
-    path("login/", custom_login, name="login"),
+    path('signup/', signup, name='signup'),
+    path('login/', CustomLoginView.as_view(), name='login'),
+     path('password-reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
      path("mfa/", mfa_method, name="mfa_method"),
      path("verify/", verify_mfa, name="verify_mfa"),
     # You can add more paths here later

@@ -7,8 +7,10 @@ class CustomUser(AbstractUser):
     role = models.CharField(max_length=50, choices=[
         ('project_manager', 'Project Manager'),
         ('safety_officer', 'Safety Officer'),
-        ('inventory_clerk', 'Inventory Clerk'),
-        ('finance_admin', 'Finance Admin'),
+        ('inventory_manager', 'Inventory Manager'),
+        ('accounts_manager', 'Accounts Manager'),
+        ('equipment_manager', 'Equipment Manager'),
+        
     ], blank=True, null=True)
     department = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

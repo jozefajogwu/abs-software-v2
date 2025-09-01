@@ -33,6 +33,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     
     'users',
+    'rest_framework',
     'projects',
     'equipment',
     'inventory',

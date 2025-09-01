@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login | ABY</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(to bottom, #ffffff, #003366);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            width: 300px;
+            text-align: center;
+        }
+        .diamond {
+            width: 60px;
+            height: 60px;
+            background-color: #0077cc;
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+            margin: 0 auto 10px;
+        }
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            color: #003366;
+            margin-bottom: 30px;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        button {
+            background-color: #0077cc;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .forgot {
+            margin-top: 10px;
+            display: block;
+            color: #0077cc;
+            text-decoration: none;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <div class="diamond"></div>
+        <div class="logo">ABY</div>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.username.label_tag }}
+            <input type="text" name="username" placeholder="Enter Your Username" required>
+
+            {{ form.password.label_tag }}
+            <input type="password" name="password" placeholder="Enter Your Password" required>
+
+            <button type="submit">Login</button>
+        </form>
+        <a href="{% url 'password_reset' %}" class="forgot">Forgot Password?</a>
+    </div>
+</body>
+</html>
