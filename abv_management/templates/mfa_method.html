@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MFA Method | ABY</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(to bottom, white, #001f4d);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .auth-box {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 320px;
+        }
+        .auth-box img {
+            width: 60px;
+            margin-bottom: 10px;
+        }
+        .auth-box h2 {
+            color: #001f4d;
+            margin-bottom: 10px;
+        }
+        .auth-box p {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .method-options {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        .method-options label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+        }
+        .method-options input[type="radio"] {
+            margin-top: 8px;
+        }
+        .method-options img {
+            width: 40px;
+            height: 40px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #001f4d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .error {
+            color: red;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-box">
+        {% load static %}
+        <img src="{% static 'images/your-diamond-logo.png' %}" alt="ABY Logo">
+        <h2>Multi-Factor Authentication</h2>
+        <p>Please select your authentication method</p>
+
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="method-options">
+                <label>
+                    <img src="{% static 'images/email-icon.png' %}" alt="Email">
+                    <input type="radio" name="method" value="email" required> Email
+                </label>
+                <label>
+                    <img src="{% static 'images/sms-icon.png' %}" alt="SMS">
+                    <input type="radio" name="method" value="sms" required> SMS
+                </label>
+            </div>
+
+            <input type="text" name="code" placeholder="Please Enter Your Verification Code" required>
+            <button type="submit">Verify</button>
+        </form>
+    </div>
+</body>
+</html>

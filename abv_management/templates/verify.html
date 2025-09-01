@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MFA Verification</title>
+    <style>
+        body {
+            background: linear-gradient(to bottom, white, #001f4d);
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .verify-box {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            width: 300px;
+        }
+        .verify-box h2 {
+            color: #001f4d;
+            margin-bottom: 20px;
+        }
+        .verify-box input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .verify-box button {
+            width: 100%;
+            padding: 10px;
+            background-color: #001f4d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="verify-box">
+        <img src="your-logo.png" alt="ABY Logo" style="width:50px;">
+        <h2>Multi-Factor Authentication</h2>
+        <p>Please enter your verification code</p>
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <input type="text" name="code" placeholder="Enter Your Verification Code" required>
+            <button type="submit">Verify</button>
+        </form>
+    </div>
+</body>
+</html>
