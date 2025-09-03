@@ -8,7 +8,7 @@ from django.conf import settings
 
 # Create your models here.
 
-class Safety(models.Model):
+class SafetyIncident(models.Model):
     incident_date = models.DateField()
     description = models.TextField()
     actions_taken = models.TextField()

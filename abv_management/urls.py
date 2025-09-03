@@ -27,9 +27,14 @@ urlpatterns = [
     path('', homepage, name='homepage'),  # 👈 this sets up your homepage
     path('signup/', signup, name='signup'),
     path('login/', CustomLoginView.as_view(), name='login'),
-     path('password-reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
-     path("mfa/", mfa_method, name="mfa_method"),
-     path("verify/", verify_mfa, name="verify_mfa"),
+    path('password-reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
+    path('api/', include('safety.urls')),  # ← this wires in the safety app
+    path('api/', include('reports.urls')),  # ← this wires in the reports app
+    path('api/', include('users.urls')),  # ← this wires in the users app
+    path('api/', include('projects.urls')),  # ← this wires in the projects app
+    path('api/', include('equipment.urls')),  # ← this wires in the equipment app
+    path("mfa/", mfa_method, name="mfa_method"),
+    path("verify/", verify_mfa, name="verify_mfa"),
     # You can add more paths here later
 ]
 

@@ -5,4 +5,4 @@ class ReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = Report
         fields = '__all__'
-        fields = ['id', 'title', 'content', 'created_at', 'updated_at']
+        

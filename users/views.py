@@ -6,6 +6,9 @@ from django.shortcuts import render, redirect
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth.views import LoginView
+from rest_framework import viewsets
+from django.contrib.auth import get_user_model
+from .serializers import UserSerializer
 import random
 
 
@@ -99,3 +102,12 @@ def verify_mfa(request):
             return render(request, "verify.html", {"error": "Invalid code"})
     return render(request, "verify.html")
 
+
+
+#views for Serializers and Viewsets
+
+User = get_user_model()
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
