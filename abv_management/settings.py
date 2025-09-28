@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-!f^m_=16&p22s&adq0+ix#v(^o8i$rr_7v6tk51c4=0d16h0ti'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -33,12 +33,20 @@ ALLOWED_HOSTS = ['*']
 INSTALLED_APPS = [
     
     'users',
+    'dashboard',
+    'accounts',
     'rest_framework',
+    'django_extensions',
+    'rest_framework_simplejwt',
     'drf_yasg',
     'projects',
     'equipment',
     'inventory',
+    'finance',
+    'incidents',
+    'operations',
     'safety',
+    'transaction',
     'reports',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -51,6 +59,18 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
 ]
+ #JWT Authentication setup
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+# Pagination settings
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 10
+}
+
 SITE_ID = 1
 
 MIDDLEWARE = [

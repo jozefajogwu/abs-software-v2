@@ -21,6 +21,13 @@ from users.views import homepage  # ✅ or from whatever app your homepage view 
 from users.views import signup
 from django.contrib.auth import views as auth_views
 from users.views import CustomLoginView
+from django.urls import path, include
+from dashboard.views import DashboardSummary
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+from rest_framework import permissions
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -36,7 +43,31 @@ urlpatterns = [
     path("mfa/", mfa_method, name="mfa_method"),
     path("verify/", verify_mfa, name="verify_mfa"),
     # You can add more paths here later
+    # ✅ JWT login endpoints
+    path('api/auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    
+    path('api/auth/', include('accounts.urls')),
+    
+ 
+    path('api/', include('dashboard.urls')),
+    path('api/summary/', DashboardSummary.as_view()),
+    
+    
+    
+    
+   
+
 ]
 
-
-
+schema_view = get_schema_view(
+    openapi.Info(
+        title="ABV Management API",
+        default_version='v1',
+        description="API documentation for ABV Management system",
+        contact=openapi.Contact(email="support@abv.com"),
+        license=openapi.License(name="MIT License"),
+    ),
+    public=True,
+    permission_classes=[permissions.AllowAny],
+)
