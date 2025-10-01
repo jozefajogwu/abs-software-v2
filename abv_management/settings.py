@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     
     'users',
     'dashboard',
+    'category',
     'accounts',
     'rest_framework',
     'django_extensions',
@@ -58,15 +59,18 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
+    'anymail',
 ]
  #JWT Authentication setup
+
+# Pagination settings
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
-}
-# Pagination settings
-REST_FRAMEWORK = {
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 10
 }
@@ -159,7 +163,28 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = "/dashboard/"  # or any valid path you've defined
 AUTH_USER_MODEL = 'users.CustomUser'
+# Email configuration for account activation
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+import os
+#from dotenv import load_dotenv
 
+#load_dotenv()
+
+#EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'anymail.backends.sendinblue.EmailBackend'
+
+
+ANYMAIL = {
+        "SENDINBLUE_API_KEY": os.getenv('SENDINBLUE_API_KEY'),  # Use environment variable for security
+}
+
+
+DEFAULT_FROM_EMAIL = 'abydiamondmines62@gmail.com'
+
+#EMAIL_HOST = 'smtp-relay.brevo.com'
+#EMAIL_PORT = 587
+#EMAIL_USE_TLS = True
+#EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+#EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+#DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 

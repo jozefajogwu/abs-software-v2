@@ -25,6 +25,8 @@ from django.urls import path, include
 from dashboard.views import DashboardSummary
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+
+
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -52,6 +54,17 @@ urlpatterns = [
  
     path('api/', include('dashboard.urls')),
     path('api/summary/', DashboardSummary.as_view()),
+    
+    # other routes...
+    path('api/auth/', include('users.urls')),
+    #user management endpoints
+    path('api/users/', include('users.urls')),
+    #category management endpoints
+    path('api/', include('category.urls')),
+
+
+    
+
     
     
     
