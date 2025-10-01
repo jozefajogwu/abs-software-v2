@@ -60,7 +60,8 @@ urlpatterns = [
     #user management endpoints
     path('api/users/', include('users.urls')),
     #category management endpoints
-    path('api/', include('category.urls')),
+    path('api/categories/', include(('category.urls', 'category'), namespace='category')),
+
 
 
     

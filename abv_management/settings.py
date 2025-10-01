@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-!f^m_=16&p22s&adq0+ix#v(^o8i$rr_7v6tk51c4=0d16h0ti
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['https://abs-software-v2-1.onrender.com','https://aby-sigma.vercel.app/']
 
 
 # Application definition
@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'users',
     'dashboard',
     'category',
+    'corsheaders',
     'accounts',
     'rest_framework',
     'django_extensions',
@@ -80,6 +81,7 @@ SITE_ID = 1
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware', 
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -88,6 +90,7 @@ MIDDLEWARE = [
     'allauth.account.middleware.AccountMiddleware',
 
 ]
+CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins (only for development)
 
 ROOT_URLCONF = 'abv_management.urls'
 
@@ -150,6 +153,7 @@ USE_I18N = True
 
 USE_TZ = True
 
+APPEND_SLASH = False
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
