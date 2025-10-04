@@ -26,8 +26,8 @@ SECRET_KEY = 'django-insecure-!f^m_=16&p22s&adq0+ix#v(^o8i$rr_7v6tk51c4=0d16h0ti
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    'https://abs-software-v2-1.onrender.com',
-    'https://aby-sigma.vercel.app/',
+   'abs-software-v2-1.onrender.com',
+    'aby-sigma.vercel.app',
     '127.0.0.1',
     'localhost',
     ]
@@ -96,7 +96,7 @@ MIDDLEWARE = [
 
 ]
 CORS_ALLOWED_ORIGINS = [
-    'https://aby-sigma.vercel.app/',
+    'https://aby-sigma.vercel.app',
     "http://localhost:3000",  # for local dev# replace with your actual Vercel URL
 ]
  # Allow all origins (only for development)
