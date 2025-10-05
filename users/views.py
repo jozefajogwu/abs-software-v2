@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 from .models import CustomUser
 from .serializers import UserSerializer, RoleSerializer
 from .utils import generate_activation_link
+from users.utils import generate_activation_link, send_resend_email
 
 User = get_user_model()
 
@@ -60,8 +61,16 @@ class UserListCreateView(APIView):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save(is_active=False)
-            send_activation_email(user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            try:
+                send_activation_email(user)
+            except Exception as e:
+                print("Email error:", e)
+
+            return Response({
+                "message": "User successfully created. Activation email will be sent shortly.",
+                "user": serializer.data
+            }, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -100,9 +109,8 @@ class UserDeleteView(APIView):
             user = CustomUser.objects.get(id=id)
         except CustomUser.DoesNotExist:
             return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-        user.is_active = False
-        user.save()
-        return Response({"detail": "User deactivated"}, status=status.HTTP_204_NO_CONTENT)
+        user.delete()
+        return Response({"detail": "User permanently deleted"})
 
 
 class UserStatsView(APIView):
@@ -182,17 +190,11 @@ class ActivateUserView(APIView):
 
 def send_activation_email(user):
     activation_link = generate_activation_link(user)
-    subject = "Activate Your ABY Account"
-    message = f"""
-Hi {user.username},
-
-Your account has been approved by the admin.
-
-Please activate your account and set your password using the link below:
-
-{activation_link}
-
-Thanks,
-ABY Team
-"""
-    send_mail(subject, message, None, [user.email])
+    subject = "Activate your ABV account"
+    html = f"""
+        <p>Hello {user.username},</p>
+        <p>Thanks for signing up! Click the link below to activate your account:</p>
+        <p><a href="{activation_link}">Activate Account</a></p>
+        <p>If you didn’t request this, you can safely ignore this email.</p>
+    """
+    send_resend_email(user.email, subject, html)

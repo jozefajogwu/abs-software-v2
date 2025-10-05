@@ -194,10 +194,6 @@ ANYMAIL = {
 
 DEFAULT_FROM_EMAIL = 'abydiamondmines62@gmail.com'
 
-#EMAIL_HOST = 'smtp-relay.brevo.com'
-#EMAIL_PORT = 587
-#EMAIL_USE_TLS = True
-#EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-#EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-#DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+RESEND_API_KEY = "re_hEtzMVjc_LbYgZ2gVm2A9eVCnjCNkV46A"
+RESEND_FROM_EMAIL = "onboarding@resend.dev"  # or your verified sender
 
