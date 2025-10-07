@@ -27,8 +27,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # Auth endpoints
+    path('api/auth/login/', LoginView.as_view(), name='login'),
     path('signup/', SignupView.as_view(), name='signup'),
-    path('login/', LoginView.as_view(), name='login'),
+    #path('login/', LoginView.as_view(), name='login'),
     path('password-reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
 
     # JWT endpoints
