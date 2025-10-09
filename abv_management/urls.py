@@ -27,7 +27,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # Auth endpoints
-    path('api/auth/login/', LoginView.as_view(), name='login'),
+    #path('api/auth/login/', LoginView.as_view(), name='login'),
+    #path('api/auth/', include('users.urls')),  # ✅ now login is at /api/auth/login/
+
     path('signup/', SignupView.as_view(), name='signup'),
     #path('login/', LoginView.as_view(), name='login'),
     path('password-reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
@@ -36,7 +38,7 @@ urlpatterns = [
     #path('api/auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/auth/', include('accounts.urls')),
+    #path('api/auth/', include('accounts.urls')),
 
     # API routes
     path('api/users/', include('users.urls')),

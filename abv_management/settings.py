@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-!f^m_=16&p22s&adq0+ix#v(^o8i$rr_7v6tk51c4=0d16h0ti
 DEBUG = True
 
 ALLOWED_HOSTS = [
-   'abs-software-v2-1.onrender.com',
+    'abs-software-v2-1.onrender.com',
     'aby-sigma.vercel.app',
     '127.0.0.1',
     'localhost',
@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_extensions',
     'rest_framework_simplejwt',
+    'rest_framework.authtoken',
     'drf_yasg',
     'projects',
     'equipment',
@@ -79,6 +80,8 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 10
+    
+    
 }
 
 SITE_ID = 1
@@ -96,11 +99,14 @@ MIDDLEWARE = [
 
 ]
 CORS_ALLOWED_ORIGINS = [
-    True
-    #'https://aby-sigma.vercel.app',
-    #"http://localhost:3000",  # for local dev# replace with your actual Vercel URL
+    'https://aby-sigma.vercel.app',
+    "http://localhost:3000",
+    "https://abs-software-v2-1.onrender.com",# for local dev# replace with your actual Vercel URL
 ]
  # Allow all origins (only for development)
+ 
+CORS_ALLOW_CREDENTIALS = True
+
 
 ROOT_URLCONF = 'abv_management.urls'
 
@@ -150,6 +156,11 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 
 
 # Internationalization

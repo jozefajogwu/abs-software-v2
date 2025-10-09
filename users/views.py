@@ -7,6 +7,7 @@ from django.contrib.auth import authenticate, get_user_model, login
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import send_mail
 from django.utils.http import urlsafe_base64_decode
+from django.contrib.auth import get_user_model
 
 from rest_framework import permissions, status
 from rest_framework.response import Response
@@ -34,14 +35,19 @@ class SignupView(APIView):
 
 class LoginView(APIView):
     def post(self, request):
-        username = request.data.get("username")
+        email = request.data.get("email")
         password = request.data.get("password")
-        user = authenticate(request, username=username, password=password)
+
+        try:
+            user_obj = CustomUser.objects.get(email=email)
+            user = authenticate(request, username=user_obj.username, password=password)
+        except CustomUser.DoesNotExist:
+            user = None
 
         if user:
             login(request, user)
             return Response({"message": "Login successful"})
-        return Response({"error": "Invalid credentials"}, status=400)
+        return Response({"error": "Invalid credentials"}, status=401)
 
 
 
