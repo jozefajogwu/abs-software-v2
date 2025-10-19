@@ -95,11 +95,7 @@ MIDDLEWARE = [
     'allauth.account.middleware.AccountMiddleware',
 
 ]
-CORS_ALLOWED_ORIGINS = [
-    'https://aby-sigma.vercel.app',
-    "http://localhost:3000",  # for local dev# replace with your actual Vercel URL
-]
- # Allow all origins (only for development)
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'abv_management.urls'
 
