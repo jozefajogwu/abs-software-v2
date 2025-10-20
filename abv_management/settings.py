@@ -193,3 +193,22 @@ DEFAULT_FROM_EMAIL = 'abydiamondmines62@gmail.com'
 RESEND_API_KEY = "re_hEtzMVjc_LbYgZ2gVm2A9eVCnjCNkV46A"
 RESEND_FROM_EMAIL = "onboarding@resend.dev"  # or your verified sender
 
+
+# Force all requests to use HTTPS in production
+#SECURE_SSL_REDIRECT = True
+#SECURE_HSTS_SECONDS = 3600  # Enable HTTP Strict Transport Security (HSTS)
+#SECURE_HSTS_INCLUDE_SUBDOMAINS = True  # Include subdomains in HSTS policy
+#SECURE_HSTS_PRELOAD = True  # Allow the site to be preloaded into browsers' HSTS lists
+#SECURE_BROWSER_XSS_FILTER = True  # Enable browser XSS filter
+#SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevent browsers from interpreting files as something else
+
+#SIMPLE_JWT configuration
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),  # Access token expires in 15 minutes
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),     # Refresh token expires in 7 days
+    'ROTATE_REFRESH_TOKENS': True,                    # Rotate refresh token after each use
+    'BLACKLIST_AFTER_ROTATION': True,                 # Blacklist old refresh tokens
+}
+
