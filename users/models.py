@@ -15,6 +15,11 @@ class CustomUser(AbstractUser):
     department = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    # --- ADD THIS NEW FIELD ---
+    must_change_password = models.BooleanField(default=False, 
+                                               help_text="Designates whether the user must change their password upon next login.")
+    # --------------------------
 
     
     USERNAME_FIELD = 'email'

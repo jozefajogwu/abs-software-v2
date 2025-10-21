@@ -1,7 +1,3 @@
-# ────────────────────────────────────────────────────────────────
-# Imports
-# ────────────────────────────────────────────────────────────────
-
 import random
 from django.contrib.auth import authenticate, get_user_model, login
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
@@ -39,11 +35,16 @@ class LoginView(APIView):
         user = authenticate(request, username=username, password=password)
 
         if user:
+            if user.must_change_password:
+                return Response({
+                    "error": "Password change required.",
+                    "must_change_password": True
+                }, status=status.HTTP_401_UNAUTHORIZED)
+
             login(request, user)
             return Response({"message": "Login successful"})
+
         return Response({"error": "Invalid credentials"}, status=400)
-
-
 
 # ────────────────────────────────────────────────────────────────
 # User Views
@@ -61,13 +62,18 @@ class UserListCreateView(APIView):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save(is_active=False)
+            temp_password = getattr(user, 'temp_password_for_email', None)
+
+            if not temp_password:
+                print("Error: Temporary password missing on user instance.")
+
             try:
-                send_activation_email(user)
+                send_activation_email(user, temp_password)
             except Exception as e:
                 print("Email error:", e)
 
             return Response({
-                "message": "User successfully created. Activation email will be sent shortly.",
+                "message": "User successfully created. Activation email with temporary password will be sent shortly.",
                 "user": serializer.data
             }, status=status.HTTP_201_CREATED)
 
@@ -188,13 +194,16 @@ class ActivateUserView(APIView):
 # Utility
 # ────────────────────────────────────────────────────────────────
 
-def send_activation_email(user):
+def send_activation_email(user, temp_password):
     activation_link = generate_activation_link(user)
-    subject = "Activate your ABV account"
+    subject = "Account Activation and Temporary Password"
     html = f"""
         <p>Hello {user.username},</p>
-        <p>Thanks for signing up! Click the link below to activate your account:</p>
+        <p>Thanks for signing up! Your account has been created.</p>
+        <p>Your <strong>Temporary Password</strong> is: <strong>{temp_password}</strong></p> 
+        <p>Click the link below to <strong>activate your account</strong>:</p>
         <p><a href="{activation_link}">Activate Account</a></p>
+        <p>Once activated, you will use the temporary password to log in and will be immediately prompted to set a new, permanent password.</p>
         <p>If you didn’t request this, you can safely ignore this email.</p>
     """
     send_resend_email(user.email, subject, html)
