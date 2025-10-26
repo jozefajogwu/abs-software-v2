@@ -8,7 +8,7 @@ class CustomUser(AbstractUser):
         ('project_manager', 'Project Manager'),
         ('safety_officer', 'Safety Officer'),
         ('inventory_manager', 'Inventory Manager'),
-        ('accounts_manager', 'Accounts Manager'),
+        ('production_manager', 'Production Manager'),
         ('equipment_manager', 'Equipment Manager'),
     ], blank=True, null=True)
     department = models.CharField(max_length=100, blank=True, null=True)
