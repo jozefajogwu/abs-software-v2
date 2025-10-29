@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-!f^m_=16&p22s&adq0+ix#v(^o8i$rr_7v6tk51c4=0d16h0ti
 DEBUG = True
 
 ALLOWED_HOSTS = [
-   'abs-software-v2-1.onrender.com',
+   'https://abs-software-v2.onrender.com',
     'aby-sigma.vercel.app',
     '127.0.0.1',
     'localhost',
