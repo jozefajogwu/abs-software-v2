@@ -50,10 +50,6 @@ urlpatterns = [
 
     # Dashboard summary
     path('api/summary/', DashboardSummary.as_view()),
-    
-     # operations module
-    path('api/operations/', include('operations.urls')),
-
 ]
 
 # 🖼️ Serve media files during development

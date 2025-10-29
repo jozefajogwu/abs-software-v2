@@ -8,23 +8,21 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Sum, F
 from .models import Inventory
 from .serializers import InventorySerializer
-from users.permissions import IsInventoryManager
 
 class InventoryListCreateView(generics.ListCreateAPIView):
     queryset = Inventory.objects.all()
     serializer_class = InventorySerializer
-    permission_classes = [IsInventoryManager]
+    permission_classes = [IsAuthenticated]
 
 class InventoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Inventory.objects.all()
     serializer_class = InventorySerializer
-    permission_classes = [IsInventoryManager]
+    permission_classes = [IsAuthenticated]
     lookup_field = 'id'
 
 class InventorySummaryView(APIView):
-    permission_classes = [IsInventoryManager]
-     
-     
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         total_stock = Inventory.objects.aggregate(total=Sum('quantity'))['total'] or 0
         low_stock_items = Inventory.objects.filter(quantity__lte=F('quantity') * 0.2)

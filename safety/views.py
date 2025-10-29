@@ -1,7 +1,6 @@
 from django.shortcuts import render
 from rest_framework import viewsets
 from .models import SafetyIncident, RiskAssessment
-from users.permissions import IsSafetyOfficer
 from .serializers import SafetyIncidentSerializer, RiskAssessmentSerializer
 
 def profile(request):
@@ -15,7 +14,6 @@ def profile(request):
 class SafetyIncidentViewSet(viewsets.ModelViewSet):
     queryset = SafetyIncident.objects.all()
     serializer_class = SafetyIncidentSerializer
-    permission_classes = [IsSafetyOfficer]
 
 
 # ────────────────────────────────────────────────────────────────
