@@ -3,14 +3,23 @@ from django.contrib.auth import authenticate, get_user_model, login
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import send_mail
 from django.utils.http import urlsafe_base64_decode
+from django.shortcuts import get_object_or_404
 
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAdminUser
+
+from django.contrib.auth.models import Permission, Group
 
 from .models import CustomUser
-from .serializers import UserSerializer, RoleSerializer
-from .utils import generate_activation_link
+from .serializers import (
+    UserSerializer,
+    RoleSerializer,
+    PermissionSerializer,
+    GroupRoleSerializer
+)
 from users.utils import generate_activation_link, send_resend_email
 
 User = get_user_model()
@@ -207,3 +216,24 @@ def send_activation_email(user, temp_password):
         <p>If you didn’t request this, you can safely ignore this email.</p>
     """
     send_resend_email(user.email, subject, html)
+
+# ────────────────────────────────────────────────────────────────
+# Permissions & Group Role Views
+# ────────────────────────────────────────────────────────────────
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def list_permissions(request):
+    permissions = Permission.objects.all()
+    serializer = PermissionSerializer(permissions, many=True)
+    return Response(serializer.data)
+
+@api_view(['PUT'])
+@permission_classes([IsAdminUser])
+def update_group_role(request, id):
+    group = get_object_or_404(Group, id=id)
+    serializer = GroupRoleSerializer(group, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({'message': 'Role updated successfully'})
+    return Response(serializer.errors, status=400)

@@ -1,4 +1,5 @@
 from django.urls import path
+from .views import list_permissions, update_group_role
 from .views import (
     # User management
     UserListCreateView,
@@ -38,4 +39,13 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
     #path('mfa/', MfaMethodView.as_view(), name='mfa-method'),
     #path('verify/', VerifyMfaView.as_view(), name='verify-mfa'),
+    
+    
+    
+    #admin role based permission endpoints
+
+    
+    path('permissions/', list_permissions, name='list-permissions'),
+    path('roles/<int:id>/update/', update_group_role, name='update-role'),
 ]
+

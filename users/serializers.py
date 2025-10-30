@@ -50,3 +50,20 @@ class RoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
         fields = ['id', 'name', 'description']
+
+from django.contrib.auth.models import Permission, Group
+
+class PermissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Permission
+        fields = ['id', 'codename', 'name', 'content_type']
+
+class GroupRoleSerializer(serializers.ModelSerializer):
+    permissions = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Permission.objects.all()
+    )
+
+    class Meta:
+        model = Group
+        fields = ['id', 'name', 'permissions']
