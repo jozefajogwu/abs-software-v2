@@ -221,12 +221,15 @@ def send_activation_email(user, temp_password):
 # Permissions & Group Role Views
 # ────────────────────────────────────────────────────────────────
 
+
+
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
-def list_permissions(request):
-    permissions = Permission.objects.all()
+def list_permissions_by_app(request, app_label):
+    permissions = Permission.objects.filter(content_type__app_label=app_label)
     serializer = PermissionSerializer(permissions, many=True)
     return Response(serializer.data)
+
 
 @api_view(['PUT'])
 @permission_classes([IsAdminUser])
@@ -237,3 +240,17 @@ def update_group_role(request, id):
         serializer.save()
         return Response({'message': 'Role updated successfully'})
     return Response(serializer.errors, status=400)
+
+@api_view(['PUT'])
+@permission_classes([IsAdminUser])
+def assign_role_to_user(request, id):
+    user = get_object_or_404(User, id=id)
+    role_id = request.data.get('role_id')
+
+    if not role_id:
+        return Response({"error": "Missing role_id"}, status=400)
+
+    group = get_object_or_404(Group, id=role_id)
+    user.groups.clear()  # Optional: remove previous roles
+    user.groups.add(group)
+    return Response({"message": f"Role '{group.name}' assigned to user '{user.username}'"})
