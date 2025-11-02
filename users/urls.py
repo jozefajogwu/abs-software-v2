@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import list_permissions_by_app, update_group_role, assign_role_to_user
+from .views import list_permissions_by_app, update_group_role, assign_role_to_user, update_roles_permissions
 from .views import (
     # User management
     UserListCreateView,
@@ -43,13 +43,11 @@ urlpatterns = [
     
     
     #admin role based permission endpoints
-
-    
-
-    
-    path('permissions/<str:app_label>/', list_permissions_by_app, name='permissions-by-app'),
     path('permissions/<str:app_label>/', list_permissions_by_app, name='permissions-by-app'),
     path('roles/<int:id>/update/', update_group_role, name='update-role'),
+    path('roles-permissions/', update_roles_permissions, name='update-roles-permissions'),
+
+    
     # other endpoints...
     
     path('<int:id>/assign-role/', assign_role_to_user, name='assign-role'),

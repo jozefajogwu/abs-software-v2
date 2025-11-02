@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAdminUser
+from .models import RoleModulePermission  # Import your custom model
 
 from django.contrib.auth.models import Permission, Group
 
@@ -254,3 +255,18 @@ def assign_role_to_user(request, id):
     user.groups.clear()  # Optional: remove previous roles
     user.groups.add(group)
     return Response({"message": f"Role '{group.name}' assigned to user '{user.username}'"})
+
+# Optional: remove previous roles
+@api_view(['PUT'])
+@permission_classes([IsAdminUser])
+def update_roles_permissions(request):
+    for role_data in request.data['roles']:
+        role, _ = Group.objects.get_or_create(name=role_data['name'])  # Using Django's Group model
+        for module, level in role_data['permissions'].items():
+            Permission.objects.update_or_create(
+                group=role,
+                module=module,
+                defaults={"access_level": level}
+            )
+    return Response({"message": "Permissions updated successfully"})
+

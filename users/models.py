@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.contrib.auth.models import Group
 
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
@@ -30,3 +31,16 @@ class Role(models.Model):
 
     def __str__(self):
         return self.name
+
+class RoleModulePermission(models.Model):
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    module = models.CharField(max_length=50)
+    access_level = models.CharField(max_length=10, choices=[
+        ('None', 'None'),
+        ('View', 'View'),
+        ('Edit', 'Edit'),
+        ('Full', 'Full'),
+    ])
+
+    class Meta:
+        unique_together = ('group', 'module')
