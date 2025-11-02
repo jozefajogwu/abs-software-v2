@@ -44,3 +44,6 @@ class RoleModulePermission(models.Model):
 
     class Meta:
         unique_together = ('group', 'module')
+
+    def __str__(self):
+        return f"{self.group.name} - {self.module}: {self.access_level}"

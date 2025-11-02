@@ -261,9 +261,9 @@ def assign_role_to_user(request, id):
 @permission_classes([IsAdminUser])
 def update_roles_permissions(request):
     for role_data in request.data['roles']:
-        role, _ = Group.objects.get_or_create(name=role_data['name'])  # Using Django's Group model
+        role, _ = Group.objects.get_or_create(name=role_data['name'])
         for module, level in role_data['permissions'].items():
-            Permission.objects.update_or_create(
+            RoleModulePermission.objects.update_or_create(
                 group=role,
                 module=module,
                 defaults={"access_level": level}
