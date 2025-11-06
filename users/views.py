@@ -270,3 +270,19 @@ def update_roles_permissions(request):
             )
     return Response({"message": "Permissions updated successfully"})
 
+# ────────────────────────────────────────────────────────────────
+# returns a list of all users assigned to that role
+# ────────────────────────────────────────────────────────────────
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAdminUser])
+def get_users_by_role(request, role_name):
+    try:
+        group = Group.objects.get(name=role_name)
+    except Group.DoesNotExist:
+        return Response({"error": f"Role '{role_name}' not found"}, status=404)
+
+    users = CustomUser.objects.filter(groups=group)
+    serializer = UserSerializer(users, many=True)
+    return Response(serializer.data)

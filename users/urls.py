@@ -1,5 +1,6 @@
 from django.urls import path
 from .views import list_permissions_by_app, update_group_role, assign_role_to_user, update_roles_permissions
+from .views import get_users_by_role
 from .views import (
     # User management
     UserListCreateView,
@@ -51,6 +52,14 @@ urlpatterns = [
     # other endpoints...
     
     path('<int:id>/assign-role/', assign_role_to_user, name='assign-role'),
+    
+    # Returns all users assigned to a specific role...
+    
+    path('roles/<str:role_name>/users/', get_users_by_role, name='users-by-role'),
+    
+
+    
+    
 
 ]
 
