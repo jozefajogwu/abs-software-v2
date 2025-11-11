@@ -10,11 +10,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAdminUser
-from .models import RoleModulePermission  # Import your custom model
 
 from django.contrib.auth.models import Permission, Group
+from rest_framework.permissions import AllowAny
 
-from .models import CustomUser
+from .models import CustomUser, RoleModulePermission
 from .serializers import (
     UserSerializer,
     RoleSerializer,
@@ -38,9 +38,13 @@ class SignupView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+
+
 class LoginView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
-        username = request.data.get("username")
+        username = request.data.get("username")  # this is actually the email
         password = request.data.get("password")
         user = authenticate(request, username=username, password=password)
 
@@ -72,18 +76,16 @@ class UserListCreateView(APIView):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save(is_active=False)
-            temp_password = getattr(user, 'temp_password_for_email', None)
-
-            if not temp_password:
-                print("Error: Temporary password missing on user instance.")
+            user.set_unusable_password()  # Prevent login until password is set
+            user.save()
 
             try:
-                send_activation_email(user, temp_password)
+                send_activation_email(user)
             except Exception as e:
                 print("Email error:", e)
 
             return Response({
-                "message": "User successfully created. Activation email with temporary password will be sent shortly.",
+                "message": "User created. Activation email sent.",
                 "user": serializer.data
             }, status=status.HTTP_201_CREATED)
 
@@ -197,23 +199,21 @@ class ActivateUserView(APIView):
         if PasswordResetTokenGenerator().check_token(user, token):
             user.is_active = True
             user.save()
-            return Response({"detail": "Account activated successfully"})
+            return Response({"detail": "Account activated. Please set your password."})
         return Response({"detail": "Invalid or expired token"}, status=400)
 
 # ────────────────────────────────────────────────────────────────
 # Utility
 # ────────────────────────────────────────────────────────────────
 
-def send_activation_email(user, temp_password):
+def send_activation_email(user):
     activation_link = generate_activation_link(user)
-    subject = "Account Activation and Temporary Password"
+    subject = "Activate Your ABV Account"
     html = f"""
         <p>Hello {user.username},</p>
-        <p>Thanks for signing up! Your account has been created.</p>
-        <p>Your <strong>Temporary Password</strong> is: <strong>{temp_password}</strong></p> 
-        <p>Click the link below to <strong>activate your account</strong>:</p>
+        <p>Thanks for signing up! Click the link below to activate your account:</p>
         <p><a href="{activation_link}">Activate Account</a></p>
-        <p>Once activated, you will use the temporary password to log in and will be immediately prompted to set a new, permanent password.</p>
+        <p>Once activated, you’ll be prompted to set your password.</p>
         <p>If you didn’t request this, you can safely ignore this email.</p>
     """
     send_resend_email(user.email, subject, html)
@@ -221,8 +221,6 @@ def send_activation_email(user, temp_password):
 # ────────────────────────────────────────────────────────────────
 # Permissions & Group Role Views
 # ────────────────────────────────────────────────────────────────
-
-
 
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
@@ -242,6 +240,7 @@ def update_group_role(request, id):
         return Response({'message': 'Role updated successfully'})
     return Response(serializer.errors, status=400)
 
+
 @api_view(['PUT'])
 @permission_classes([IsAdminUser])
 def assign_role_to_user(request, id):
@@ -252,11 +251,11 @@ def assign_role_to_user(request, id):
         return Response({"error": "Missing role_id"}, status=400)
 
     group = get_object_or_404(Group, id=role_id)
-    user.groups.clear()  # Optional: remove previous roles
+    user.groups.clear()
     user.groups.add(group)
     return Response({"message": f"Role '{group.name}' assigned to user '{user.username}'"})
 
-# Optional: remove previous roles
+
 @api_view(['PUT'])
 @permission_classes([IsAdminUser])
 def update_roles_permissions(request):
@@ -271,18 +270,13 @@ def update_roles_permissions(request):
     return Response({"message": "Permissions updated successfully"})
 
 # ────────────────────────────────────────────────────────────────
-# returns a list of all users assigned to that role
+# Get Users by Role
 # ────────────────────────────────────────────────────────────────
-
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAdminUser])
 def get_users_by_role(request, role_name):
-    try:
-        group = Group.objects.get(name=role_name)
-    except Group.DoesNotExist:
-        return Response({"error": f"Role '{role_name}' not found"}, status=404)
-
-    users = CustomUser.objects.filter(groups=group)
+    users = CustomUser.objects.filter(role=role_name)
     serializer = UserSerializer(users, many=True)
     return Response(serializer.data)
+

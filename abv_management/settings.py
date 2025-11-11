@@ -183,6 +183,7 @@ import os
 EMAIL_BACKEND = 'anymail.backends.sendinblue.EmailBackend'
 
 
+
 ANYMAIL = {
         "SENDINBLUE_API_KEY": os.getenv('SENDINBLUE_API_KEY'),  # Use environment variable for security
 }
@@ -214,5 +215,8 @@ SIMPLE_JWT = {
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+AUTHENTICATION_BACKENDS = ['users.backends.EmailBackend']
+
 
 
