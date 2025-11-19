@@ -1,6 +1,4 @@
 from django.urls import path
-from .views import list_permissions_by_app, update_group_role, assign_role_to_user, update_roles_permissions
-from .views import get_users_by_role
 from .views import (
     # User management
     UserListCreateView,
@@ -15,11 +13,22 @@ from .views import (
     RoleListView,
     RoleCreateView,
 
-    # Auth & MFA
+    # Auth
     SignupView,
     LoginView,
-   
+    RegisterView,
+    CustomTokenObtainPairView,
 )
+
+from .views import (
+    list_permissions_by_app,
+    update_group_role,
+    assign_role_to_user,
+    update_roles_permissions,
+    get_users_by_role,
+)
+
+from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
     # User endpoints
@@ -35,31 +44,19 @@ urlpatterns = [
     path('roles/', RoleListView.as_view(), name='role-list'),
     path('roles/create/', RoleCreateView.as_view(), name='role-create'),
 
-    # Auth & MFA endpoints
-    path('signup/', SignupView.as_view(), name='signup'),
-    path('login/', LoginView.as_view(), name='login'),
-    #path('mfa/', MfaMethodView.as_view(), name='mfa-method'),
-    #path('verify/', VerifyMfaView.as_view(), name='verify-mfa'),
-    
-    
-    
-    #admin role based permission endpoints
+    # Auth endpoints
+    path('signup/', SignupView.as_view(), name='signup'),   # legacy signup
+    path('login/', LoginView.as_view(), name='login'),     # legacy login
+    path('register/', RegisterView.as_view(), name='register'),  # new registration
+    path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),  # JWT login
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    # Admin role-based permission endpoints
     path('permissions/<str:app_label>/', list_permissions_by_app, name='permissions-by-app'),
     path('roles/<int:id>/update/', update_group_role, name='update-role'),
     path('roles-permissions/', update_roles_permissions, name='update-roles-permissions'),
-
-    
-    # other endpoints...
-    
     path('<int:id>/assign-role/', assign_role_to_user, name='assign-role'),
-    
-    # Returns all users assigned to a specific role...
-    
+
+    # Returns all users assigned to a specific role
     path('roles/<str:role_name>/users/', get_users_by_role, name='users-by-role'),
-    
-
-    
-    
-
 ]
-
