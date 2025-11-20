@@ -66,6 +66,8 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'anymail',
+    'rest_framework_simplejwt.token_blacklist',
+
 ]
  #JWT Authentication setup
 

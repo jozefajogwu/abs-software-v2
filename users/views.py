@@ -1,27 +1,30 @@
 import random
 from django.contrib.auth import authenticate, get_user_model, login
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.core.mail import send_mail
 from django.utils.http import urlsafe_base64_decode
 from django.shortcuts import get_object_or_404
 
-from rest_framework import permissions, status
+from rest_framework import permissions, status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, AllowAny
 
 from django.contrib.auth.models import Permission, Group
-from rest_framework.permissions import AllowAny
 
 from .models import CustomUser, RoleModulePermission
 from .serializers import (
     UserSerializer,
     RoleSerializer,
     PermissionSerializer,
-    GroupRoleSerializer
+    GroupRoleSerializer,
+    RegisterSerializer,
+    CustomTokenObtainPairSerializer,
 )
 from users.utils import generate_activation_link, send_resend_email
+
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 
@@ -38,27 +41,53 @@ class SignupView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        username = request.data.get("username")  # this is actually the email
+        identifier = request.data.get("username") or request.data.get("email")
         password = request.data.get("password")
-        user = authenticate(request, username=username, password=password)
+
+        if not identifier or not password:
+            return Response({"error": "Email/username and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = authenticate(request, username=identifier, password=password)
 
         if user:
-            if user.must_change_password:
+            if getattr(user, "must_change_password", False):
                 return Response({
                     "error": "Password change required.",
                     "must_change_password": True
                 }, status=status.HTTP_401_UNAUTHORIZED)
 
             login(request, user)
-            return Response({"message": "Login successful"})
+            return Response({"message": "Login successful"}, status=status.HTTP_200_OK)
 
-        return Response({"error": "Invalid credentials"}, status=400)
+        return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RegisterView(generics.CreateAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = RegisterSerializer
+    permission_classes = [AllowAny]
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+
+
+class LogoutView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        try:
+            refresh_token = request.data["refresh"]
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({"message": "Logout successful"}, status=status.HTTP_205_RESET_CONTENT)
+        except Exception:
+            return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
+
 
 # ────────────────────────────────────────────────────────────────
 # User Views
@@ -76,7 +105,7 @@ class UserListCreateView(APIView):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save(is_active=False)
-            user.set_unusable_password()  # Prevent login until password is set
+            user.set_unusable_password()
             user.save()
 
             try:
@@ -96,10 +125,7 @@ class UserDetailView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, id):
-        try:
-            user = CustomUser.objects.get(id=id)
-        except CustomUser.DoesNotExist:
-            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        user = get_object_or_404(CustomUser, id=id)
         serializer = UserSerializer(user)
         return Response(serializer.data)
 
@@ -108,10 +134,7 @@ class UserUpdateView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
     def put(self, request, id):
-        try:
-            user = CustomUser.objects.get(id=id)
-        except CustomUser.DoesNotExist:
-            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        user = get_object_or_404(CustomUser, id=id)
         serializer = UserSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -123,10 +146,7 @@ class UserDeleteView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
     def delete(self, request, id):
-        try:
-            user = CustomUser.objects.get(id=id)
-        except CustomUser.DoesNotExist:
-            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        user = get_object_or_404(CustomUser, id=id)
         user.delete()
         return Response({"detail": "User permanently deleted"})
 
@@ -159,6 +179,7 @@ class CurrentUserView(APIView):
             "role": getattr(user, 'role', 'N/A')
         })
 
+
 # ────────────────────────────────────────────────────────────────
 # Role Views
 # ────────────────────────────────────────────────────────────────
@@ -184,23 +205,27 @@ class RoleCreateView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 # ────────────────────────────────────────────────────────────────
 # Activation View
 # ────────────────────────────────────────────────────────────────
 
 class ActivateUserView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request, uidb64, token):
         try:
             uid = urlsafe_base64_decode(uidb64).decode()
             user = CustomUser.objects.get(pk=uid)
         except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
-            return Response({"detail": "Invalid activation link"}, status=400)
+            return Response({"detail": "Invalid activation link"}, status=status.HTTP_400_BAD_REQUEST)
 
         if PasswordResetTokenGenerator().check_token(user, token):
             user.is_active = True
             user.save()
-            return Response({"detail": "Account activated. Please set your password."})
-        return Response({"detail": "Invalid or expired token"}, status=400)
+            return Response({"detail": "Account activated. Please set your password."}, status=status.HTTP_200_OK)
+        return Response({"detail": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
+
 
 # ────────────────────────────────────────────────────────────────
 # Utility
@@ -217,6 +242,7 @@ def send_activation_email(user):
         <p>If you didn’t request this, you can safely ignore this email.</p>
     """
     send_resend_email(user.email, subject, html)
+
 
 # ────────────────────────────────────────────────────────────────
 # Permissions & Group Role Views
@@ -237,8 +263,8 @@ def update_group_role(request, id):
     serializer = GroupRoleSerializer(group, data=request.data)
     if serializer.is_valid():
         serializer.save()
-        return Response({'message': 'Role updated successfully'})
-    return Response(serializer.errors, status=400)
+        return Response({'message': 'Role updated successfully'}, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['PUT'])
@@ -248,26 +274,61 @@ def assign_role_to_user(request, id):
     role_id = request.data.get('role_id')
 
     if not role_id:
-        return Response({"error": "Missing role_id"}, status=400)
+        return Response({"error": "Missing role_id"}, status=status.HTTP_400_BAD_REQUEST)
 
     group = get_object_or_404(Group, id=role_id)
     user.groups.clear()
     user.groups.add(group)
-    return Response({"message": f"Role '{group.name}' assigned to user '{user.username}'"})
+    return Response({"message": f"Role '{group.name}' assigned to user '{user.username}'"}, status=status.HTTP_200_OK)
 
 
 @api_view(['PUT'])
 @permission_classes([IsAdminUser])
 def update_roles_permissions(request):
-    for role_data in request.data['roles']:
-        role, _ = Group.objects.get_or_create(name=role_data['name'])
-        for module, level in role_data['permissions'].items():
-            RoleModulePermission.objects.update_or_create(
-                group=role,
-                module=module,
-                defaults={"access_level": level}
-            )
-    return Response({"message": "Permissions updated successfully"})
+    """
+    Bulk update roles and their module permissions.
+
+    Expects:
+    {
+      "roles": [
+        {
+          "name": "Manager",
+          "permissions": {
+            "projects": "read_write",
+            "finance": "read_only"
+          }
+        }
+      ]
+    }
+    """
+    try:
+        roles_payload = request.data.get('roles', [])
+        if not isinstance(roles_payload, list):
+            return Response({"error": "roles must be a list"}, status=status.HTTP_400_BAD_REQUEST)
+
+        for role_data in roles_payload:
+            role_name = role_data.get('name')
+            perms = role_data.get('permissions', {})
+
+            if not role_name:
+                return Response({"error": "Each role must include a 'name'."}, status=status.HTTP_400_BAD_REQUEST)
+            if not isinstance(perms, dict):
+                return Response({"error": "'permissions' must be an object/dict."}, status=status.HTTP_400_BAD_REQUEST)
+
+            role_group, _ = Group.objects.get_or_create(name=role_name)
+
+            for module, level in perms.items():
+                RoleModulePermission.objects.update_or_create(
+                    group=role_group,
+                    module=module,
+                    defaults={"access_level": level}
+                )
+
+        return Response({"message": "Permissions updated successfully"}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 # ────────────────────────────────────────────────────────────────
 # Get Users by Role
@@ -278,5 +339,4 @@ def update_roles_permissions(request):
 def get_users_by_role(request, role_name):
     users = CustomUser.objects.filter(role=role_name)
     serializer = UserSerializer(users, many=True)
-    return Response(serializer.data)
-
+    return Response(serializer.data, status=status.HTTP_200_OK)

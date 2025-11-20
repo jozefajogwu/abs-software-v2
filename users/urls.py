@@ -18,9 +18,9 @@ from .views import (
     LoginView,
     RegisterView,
     CustomTokenObtainPairView,
-)
+    LogoutView,
 
-from .views import (
+    # Permissions & roles
     list_permissions_by_app,
     update_group_role,
     assign_role_to_user,
@@ -43,6 +43,8 @@ urlpatterns = [
     # Role endpoints
     path('roles/', RoleListView.as_view(), name='role-list'),
     path('roles/create/', RoleCreateView.as_view(), name='role-create'),
+    path('roles/<str:role_name>/users/', get_users_by_role, name='users-by-role'),
+    path('<int:id>/assign-role/', assign_role_to_user, name='assign-role'),
 
     # Auth endpoints
     path('signup/', SignupView.as_view(), name='signup'),   # legacy signup
@@ -50,13 +52,10 @@ urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),  # new registration
     path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),  # JWT login
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('logout/', LogoutView.as_view(), name='logout'),
 
-    # Admin role-based permission endpoints
+    # Permissions & group role endpoints
     path('permissions/<str:app_label>/', list_permissions_by_app, name='permissions-by-app'),
     path('roles/<int:id>/update/', update_group_role, name='update-role'),
     path('roles-permissions/', update_roles_permissions, name='update-roles-permissions'),
-    path('<int:id>/assign-role/', assign_role_to_user, name='assign-role'),
-
-    # Returns all users assigned to a specific role
-    path('roles/<str:role_name>/users/', get_users_by_role, name='users-by-role'),
 ]
