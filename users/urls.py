@@ -58,4 +58,5 @@ urlpatterns = [
     path('permissions/<str:app_label>/', list_permissions_by_app, name='permissions-by-app'),
     path('roles/<int:id>/update/', update_group_role, name='update-role'),
     path('roles-permissions/', update_roles_permissions, name='update-roles-permissions'),
+    
 ]
