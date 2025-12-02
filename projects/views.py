@@ -34,3 +34,25 @@ class AssignUsersToProjectView(APIView):
         project.save()
 
         return Response({"message": "Users assigned successfully"}, status=status.HTTP_200_OK)
+
+
+# 📊 Project Stats Endpoint
+class ProjectStatsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        total = Project.objects.count()
+        active = Project.objects.filter(status="Active").count()
+        completed = Project.objects.filter(status="Completed").count()
+        delayed = Project.objects.filter(status="On Hold").count()   # mapped to delayed
+        cancelled = Project.objects.filter(status="Cancelled").count()
+        archived = Project.objects.filter(status="Archived").count()
+
+        return Response({
+            "total_projects": total,
+            "active_projects": active,
+            "completed_projects": completed,
+            "delayed_projects": delayed,
+            "cancelled_projects": cancelled,
+            "archived_projects": archived
+        })
