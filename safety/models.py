@@ -6,14 +6,18 @@ from django.conf import settings
 # ────────────────────────────────────────────────────────────────
 
 class SafetyIncident(models.Model):
+    title = models.CharField(max_length=255, blank=True, null=True)  # optional but useful
+
     incident_date = models.DateField()
     description = models.TextField()
     actions_taken = models.TextField()
-    
+
     STATUS_CHOICES = [
         ("reported", "Reported"),
+        ("investigating", "Investigating"),
         ("resolving", "Resolving"),
         ("resolved", "Resolved"),
+        ("cancelled", "Cancelled"),
     ]
     incident_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="reported")
 
@@ -39,7 +43,7 @@ class SafetyIncident(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Incident on {self.incident_date} – {self.incident_status}"
+        return self.title if self.title else f"Incident on {self.incident_date} – {self.incident_status}"
 
 
 # ────────────────────────────────────────────────────────────────
