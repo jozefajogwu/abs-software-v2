@@ -18,11 +18,21 @@ def profile(request):
 # Safety Incident ViewSet with Stats Action
 # ────────────────────────────────────────────────────────────────
 
+
+
 class SafetyIncidentViewSet(viewsets.ModelViewSet):
     queryset = SafetyIncident.objects.all()
     serializer_class = SafetyIncidentSerializer
+    permission_classes = [IsAuthenticated]
 
-    @action(detail=False, methods=['get'], url_path='stats', permission_classes=[IsAuthenticated])
+    def perform_create(self, serializer):
+        """
+        Automatically set reported_by to the authenticated user
+        when creating a new incident.
+        """
+        serializer.save(reported_by=self.request.user)
+
+    @action(detail=False, methods=['get'], url_path='stats')
     def stats(self, request):
         total = SafetyIncident.objects.count()
         thirty_days_ago = now().date() - timedelta(days=30)
