@@ -7,7 +7,6 @@ from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAdminUser, AllowAny
 
 from django.contrib.auth.models import Permission, Group
@@ -28,17 +27,20 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 
+
 # ────────────────────────────────────────────────────────────────
-# Auth Views
+# Auth views
 # ────────────────────────────────────────────────────────────────
 
 class SignupView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({"message": "Signup successful"}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Signup successful"}, status=status.HTTP_201_CREATED)
+        return Response({"detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginView(APIView):
@@ -49,21 +51,19 @@ class LoginView(APIView):
         password = request.data.get("password")
 
         if not identifier or not password:
-            return Response({"error": "Email/username and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Email/username and password are required"}, status=status.HTTP_400_BAD_REQUEST)
 
         user = authenticate(request, username=identifier, password=password)
-
         if user:
             if getattr(user, "must_change_password", False):
-                return Response({
-                    "error": "Password change required.",
-                    "must_change_password": True
-                }, status=status.HTTP_401_UNAUTHORIZED)
-
+                return Response(
+                    {"detail": "Password change required", "must_change_password": True},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
             login(request, user)
-            return Response({"message": "Login successful"}, status=status.HTTP_200_OK)
+            return Response({"detail": "Login successful"}, status=status.HTTP_200_OK)
 
-        return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class RegisterView(generics.CreateAPIView):
@@ -84,13 +84,13 @@ class LogoutView(APIView):
             refresh_token = request.data["refresh"]
             token = RefreshToken(refresh_token)
             token.blacklist()
-            return Response({"message": "Logout successful"}, status=status.HTTP_205_RESET_CONTENT)
+            return Response({"detail": "Logout successful"}, status=status.HTTP_205_RESET_CONTENT)
         except Exception:
-            return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 # ────────────────────────────────────────────────────────────────
-# User Views
+# User views
 # ────────────────────────────────────────────────────────────────
 
 class UserListCreateView(APIView):
@@ -113,12 +113,12 @@ class UserListCreateView(APIView):
             except Exception as e:
                 print("Email error:", e)
 
-            return Response({
-                "message": "User created. Activation email sent.",
-                "user": serializer.data
-            }, status=status.HTTP_201_CREATED)
+            return Response(
+                {"detail": "User created. Activation email sent.", "user": serializer.data},
+                status=status.HTTP_201_CREATED,
+            )
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserDetailView(APIView):
@@ -139,7 +139,7 @@ class UserUpdateView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserDeleteView(APIView):
@@ -148,7 +148,7 @@ class UserDeleteView(APIView):
     def delete(self, request, id):
         user = get_object_or_404(CustomUser, id=id)
         user.delete()
-        return Response({"detail": "User permanently deleted"})
+        return Response({"detail": "User permanently deleted"}, status=status.HTTP_200_OK)
 
 
 class UserStatsView(APIView):
@@ -159,12 +159,15 @@ class UserStatsView(APIView):
         active = CustomUser.objects.filter(is_active=True).count()
         inactive = CustomUser.objects.filter(is_active=False).count()
         employees = CustomUser.objects.exclude(role__isnull=True).count()
-        return Response({
-            "total_users": total,
-            "active_users": active,
-            "inactive_users": inactive,
-            "employees": employees
-        })
+        return Response(
+            {
+                "total_users": total,
+                "active_users": active,
+                "inactive_users": inactive,
+                "employees": employees,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class CurrentUserView(APIView):
@@ -172,27 +175,27 @@ class CurrentUserView(APIView):
 
     def get(self, request):
         user = request.user
-        return Response({
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "role": getattr(user, 'role', 'N/A')
-        })
+        return Response(
+            {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "role": getattr(user, "role", "N/A"),
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 # ────────────────────────────────────────────────────────────────
-# Role Views
+# Role views
 # ────────────────────────────────────────────────────────────────
 
 class RoleListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        roles = [
-            {"key": key, "label": label}
-            for key, label in CustomUser._meta.get_field('role').choices
-        ]
-        return Response(roles)
+        roles = [{"key": key, "label": label} for key, label in CustomUser._meta.get_field("role").choices]
+        return Response(roles, status=status.HTTP_200_OK)
 
 
 class RoleCreateView(APIView):
@@ -203,11 +206,11 @@ class RoleCreateView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 # ────────────────────────────────────────────────────────────────
-# Activation View
+# Activation view
 # ────────────────────────────────────────────────────────────────
 
 class ActivateUserView(APIView):
@@ -245,98 +248,65 @@ def send_activation_email(user):
 
 
 # ────────────────────────────────────────────────────────────────
-# Permissions & Group Role Views
+# Permissions & role assignment views
 # ────────────────────────────────────────────────────────────────
 
-@api_view(['GET'])
-@permission_classes([IsAdminUser])
-def list_permissions_by_app(request, app_label):
-    permissions = Permission.objects.filter(content_type__app_label=app_label)
-    serializer = PermissionSerializer(permissions, many=True)
-    return Response(serializer.data)
+class ListPermissionsByAppView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request, app_label):
+        permissions_qs = Permission.objects.filter(content_type__app_label=app_label)
+        serializer = PermissionSerializer(permissions_qs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@api_view(['PUT'])
-@permission_classes([IsAdminUser])
-def update_group_role(request, id):
-    group = get_object_or_404(Group, id=id)
-    serializer = GroupRoleSerializer(group, data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response({'message': 'Role updated successfully'}, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class UpdateGroupRoleView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def put(self, request, id):
+        group = get_object_or_404(Group, id=id)
+        serializer = GroupRoleSerializer(group, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"detail": "Role updated successfully"}, status=status.HTTP_200_OK)
+        return Response({"detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['PUT'])
-@permission_classes([IsAdminUser])
-def assign_role_to_user(request, id):
-    user = get_object_or_404(User, id=id)
-    role_id = request.data.get('role_id')
-
-    if not role_id:
-        return Response({"error": "Missing role_id"}, status=status.HTTP_400_BAD_REQUEST)
-
-    group = get_object_or_404(Group, id=role_id)
-    user.groups.clear()
-    user.groups.add(group)
-    return Response({"message": f"Role '{group.name}' assigned to user '{user.username}'"}, status=status.HTTP_200_OK)
-
-
-@api_view(['PUT'])
-@permission_classes([IsAdminUser])
-def update_roles_permissions(request):
+class AssignRoleView(APIView):
     """
-    Bulk update roles and their module permissions.
-
-    Expects:
-    {
-      "roles": [
-        {
-          "name": "Manager",
-          "permissions": {
-            "projects": "read_write",
-            "finance": "read_only"
-          }
-        }
-      ]
-    }
+    Assign a role by updating CustomUser.role directly.
+    Accepts either:
+      { "role": "<role_key>" } OR { "role_id": <numeric_id> }
     """
-    try:
-        roles_payload = request.data.get('roles', [])
-        if not isinstance(roles_payload, list):
-            return Response({"error": "roles must be a list"}, status=status.HTTP_400_BAD_REQUEST)
+    permission_classes = [IsAdminUser]
 
-        for role_data in roles_payload:
-            role_name = role_data.get('name')
-            perms = role_data.get('permissions', {})
+    def put(self, request, id):
+        user = get_object_or_404(User, id=id)
 
-            if not role_name:
-                return Response({"error": "Each role must include a 'name'."}, status=status.HTTP_400_BAD_REQUEST)
-            if not isinstance(perms, dict):
-                return Response({"error": "'permissions' must be an object/dict."}, status=status.HTTP_400_BAD_REQUEST)
+        role_value = request.data.get("role")
+        role_id = request.data.get("role_id")
 
-            role_group, _ = Group.objects.get_or_create(name=role_name)
+        # If role_id is provided, map it to a role key
+        if role_id:
+            try:
+                # Assuming you have a Role model with id/key mapping
+                from .models import Role
+                role_obj = Role.objects.get(id=role_id)
+                role_value = role_obj.key
+            except Exception:
+                return Response({"detail": f"Invalid role_id '{role_id}'"}, status=status.HTTP_400_BAD_REQUEST)
 
-            for module, level in perms.items():
-                RoleModulePermission.objects.update_or_create(
-                    group=role_group,
-                    module=module,
-                    defaults={"access_level": level}
-                )
+        if not role_value:
+            return Response({"detail": "Missing role"}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({"message": "Permissions updated successfully"}, status=status.HTTP_200_OK)
+        # Validate against CustomUser.role choices
+        valid_roles = dict(CustomUser._meta.get_field("role").choices)
+        if role_value not in valid_roles:
+            return Response({"detail": f"Invalid role '{role_value}'"}, status=status.HTTP_400_BAD_REQUEST)
 
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # ✅ Update and persist
+        user.role = role_value
+        user.save()
 
-
-# ────────────────────────────────────────────────────────────────
-# Get Users by Role
-# ────────────────────────────────────────────────────────────────
-
-@api_view(['GET'])
-@permission_classes([permissions.IsAdminUser])
-def get_users_by_role(request, role_name):
-    users = CustomUser.objects.filter(role=role_name)
-    serializer = UserSerializer(users, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+        # Return full serialized user
+        return Response(UserSerializer(user).data, status=status.HTTP_200_OK)

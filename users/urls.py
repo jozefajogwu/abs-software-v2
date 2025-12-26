@@ -9,7 +9,7 @@ from .views import (
     CurrentUserView,
     ActivateUserView,
 
-    # Role management
+    # Roles
     RoleListView,
     RoleCreateView,
 
@@ -20,12 +20,12 @@ from .views import (
     CustomTokenObtainPairView,
     LogoutView,
 
-    # Permissions & roles
-    list_permissions_by_app,
-    update_group_role,
-    assign_role_to_user,
-    update_roles_permissions,
-    get_users_by_role,
+    # Permissions & role assignment
+    ListPermissionsByAppView,
+    UpdateGroupRoleView,
+    AssignRoleView,
+    UpdateRolesPermissionsView,
+    GetUsersByRoleView,
 )
 
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -43,20 +43,21 @@ urlpatterns = [
     # Role endpoints
     path('roles/', RoleListView.as_view(), name='role-list'),
     path('roles/create/', RoleCreateView.as_view(), name='role-create'),
-    path('roles/<str:role_name>/users/', get_users_by_role, name='users-by-role'),
-    path('<int:id>/assign-role/', assign_role_to_user, name='assign-role'),
+    path('roles/<str:role_name>/users/', GetUsersByRoleView.as_view(), name='users-by-role'),
+
+    # Assign role directly via CustomUser.role
+    path('<int:id>/assign-role/', AssignRoleView.as_view(), name='assign-role'),
 
     # Auth endpoints
-    path('signup/', SignupView.as_view(), name='signup'),   # legacy signup
-    path('login/', LoginView.as_view(), name='login'),     # legacy login
-    path('register/', RegisterView.as_view(), name='register'),  # new registration
-    path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),  # JWT login
+    path('signup/', SignupView.as_view(), name='signup'),
+    path('login/', LoginView.as_view(), name='login'),
+    path('register/', RegisterView.as_view(), name='register'),
+    path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('logout/', LogoutView.as_view(), name='logout'),
 
-    # Permissions & group role endpoints
-    path('permissions/<str:app_label>/', list_permissions_by_app, name='permissions-by-app'),
-    path('roles/<int:id>/update/', update_group_role, name='update-role'),
-    path('roles-permissions/', update_roles_permissions, name='update-roles-permissions'),
-    
+    # Permissions & group role management
+    path('permissions/<str:app_label>/', ListPermissionsByAppView.as_view(), name='permissions-by-app'),
+    path('roles/<int:id>/update/', UpdateGroupRoleView.as_view(), name='update-role'),
+    path('roles-permissions/', UpdateRolesPermissionsView.as_view(), name='update-roles-permissions'),
 ]

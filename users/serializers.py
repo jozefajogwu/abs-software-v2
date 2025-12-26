@@ -1,8 +1,7 @@
 import string
 import secrets
 from rest_framework import serializers
-from django.contrib.auth import get_user_model
-from django.contrib.auth import authenticate
+from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.models import Permission, Group
 from .models import Role, CustomUser
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -20,15 +19,23 @@ def generate_random_password(length=12):
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
     profile_image = serializers.ImageField(required=False, allow_null=True)
+    role_label = serializers.SerializerMethodField()  # ✅ Add human-readable role label
 
     class Meta:
         model = CustomUser
         fields = [
-            'id', 'username', 'email', 'phone_number', 'role', 'department',
+            'id', 'username', 'email', 'phone_number', 'role', 'role_label', 'department',
             'is_active', 'created_at', 'password', 'must_change_password',
             'profile_image'
         ]
         read_only_fields = ['is_active', 'created_at', 'must_change_password']
+
+    def get_role_label(self, obj):
+        """Return the human-readable label for the role."""
+        if obj.role:
+            choices = dict(CustomUser._meta.get_field("role").choices)
+            return choices.get(obj.role, obj.role)
+        return None
 
     def validate_email(self, value):
         if self.instance is None and CustomUser.objects.filter(email=value).exists():
@@ -128,5 +135,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             "id": user.id,
             "username": user.username,
             "email": user.email,
+            "role": user.role,
+            "role_label": dict(CustomUser._meta.get_field("role").choices).get(user.role, user.role)
         }
         return data
