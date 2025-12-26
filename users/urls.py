@@ -43,7 +43,7 @@ urlpatterns = [
     # Role endpoints
     path('roles/', RoleListView.as_view(), name='role-list'),
     path('roles/create/', RoleCreateView.as_view(), name='role-create'),
-    path('roles/<str:role_name>/users/', GetUsersByRoleView.as_view(), name='users-by-role'),
+    path('roles/by-role/', GetUsersByRoleView.as_view(), name='users-by-role'),  # ✅ updated
 
     # Assign role directly via CustomUser.role
     path('<int:id>/assign-role/', AssignRoleView.as_view(), name='assign-role'),

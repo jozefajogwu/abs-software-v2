@@ -310,3 +310,69 @@ class AssignRoleView(APIView):
 
         # Return full serialized user
         return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
+
+
+class UpdateRolesPermissionsView(APIView):
+    """
+    Update a user's role and/or permissions.
+    Payload example:
+    {
+        "role": "admin",              # or use "role_id": 1 if you prefer
+        "permissions": [1, 2, 3]      # list of permission IDs
+    }
+    """
+    permission_classes = [IsAdminUser]
+
+    def put(self, request, id):
+        user = get_object_or_404(User, id=id)
+
+        role_value = request.data.get("role")
+        role_id = request.data.get("role_id")
+        permissions = request.data.get("permissions", [])
+
+        # Handle role assignment
+        if role_id:
+            try:
+                from .models import Role
+                role_obj = Role.objects.get(id=role_id)
+                role_value = role_obj.key
+            except Role.DoesNotExist:
+                return Response({"detail": f"Invalid role_id '{role_id}'"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if role_value:
+            valid_roles = dict(CustomUser._meta.get_field("role").choices)
+            if role_value not in valid_roles:
+                return Response({"detail": f"Invalid role '{role_value}'"}, status=status.HTTP_400_BAD_REQUEST)
+            user.role = role_value
+
+        # Handle permissions assignment
+        if permissions:
+            perms_qs = Permission.objects.filter(id__in=permissions)
+            user.user_permissions.set(perms_qs)
+
+        # Persist changes
+        user.save()
+
+        return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
+
+
+class GetUsersByRoleView(APIView):
+    """
+    Return all users that have a given role.
+    Example request: GET /api/users/by-role/?role=admin
+    """
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        role_value = request.query_params.get("role")
+        if not role_value:
+            return Response({"detail": "Missing role query parameter"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate role against choices
+        valid_roles = dict(CustomUser._meta.get_field("role").choices)
+        if role_value not in valid_roles:
+            return Response({"detail": f"Invalid role '{role_value}'"}, status=status.HTTP_400_BAD_REQUEST)
+
+        users = CustomUser.objects.filter(role=role_value)
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
