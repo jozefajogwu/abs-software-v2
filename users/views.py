@@ -51,7 +51,10 @@ class LoginView(APIView):
         password = request.data.get("password")
 
         if not identifier or not password:
-            return Response({"detail": "Email/username and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Email/username and password are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         user = authenticate(request, username=identifier, password=password)
         if user:
@@ -283,96 +286,102 @@ class AssignRoleView(APIView):
     def put(self, request, id):
         user = get_object_or_404(User, id=id)
 
-        role_value = request.data.get("role")
         role_id = request.data.get("role_id")
 
-        # If role_id is provided, map it to a role key
-        if role_id:
-            try:
-                # Assuming you have a Role model with id/key mapping
-                from .models import Role
-                role_obj = Role.objects.get(id=role_id)
-                role_value = role_obj.key
-            except Exception:
-                return Response({"detail": f"Invalid role_id '{role_id}'"}, status=status.HTTP_400_BAD_REQUEST)
+        
+# ────────────────────────────────────────────────────────────────
+# User creation with role assignment view
+# ────────────────────────────────────────────────────────────────
 
-        if not role_value:
-            return Response({"detail": "Missing role"}, status=status.HTTP_400_BAD_REQUEST)
+class CreateUserWithRoleView(APIView):
+    """
+    Create a new user and assign a role in one request.
+    Payload example:
+    {
+        "username": "joseph",
+        "email": "joseph@example.com",
+        "phone_number": "08012345678",
+        "department": "IT",
+        "password": "securepassword123",
+        "role": 2   # Inventory Manager
+    }
+    """
+    permission_classes = [permissions.IsAdminUser]
 
-        # Validate against CustomUser.role choices
-        valid_roles = dict(CustomUser._meta.get_field("role").choices)
-        if role_value not in valid_roles:
-            return Response({"detail": f"Invalid role '{role_value}'"}, status=status.HTTP_400_BAD_REQUEST)
+    def post(self, request):
+        role_id = request.data.get("role")
 
-        # ✅ Update and persist
-        user.role = role_value
-        user.save()
+        # ✅ Validate role against CustomUser.ROLE_CHOICES (integer IDs 0–4)
+        valid_roles = dict(CustomUser.ROLE_CHOICES)
+        if role_id not in valid_roles:
+            return Response(
+                {"detail": f"Invalid role_id '{role_id}'. Must be one of {list(valid_roles.keys())}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        # Return full serialized user
-        return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            # Save user with the validated role
+            user = serializer.save(role=role_id)
+            return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
-
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    
 class UpdateRolesPermissionsView(APIView):
     """
     Update a user's role and/or permissions.
     Payload example:
     {
-        "role": "admin",              # or use "role_id": 1 if you prefer
-        "permissions": [1, 2, 3]      # list of permission IDs
+        "role": 2,                  # integer role ID
+        "permissions": [1, 2, 3]    # list of permission IDs
     }
     """
     permission_classes = [IsAdminUser]
 
     def put(self, request, id):
-        user = get_object_or_404(User, id=id)
+        user = get_object_or_404(CustomUser, id=id)
 
-        role_value = request.data.get("role")
-        role_id = request.data.get("role_id")
+        role_id = request.data.get("role")
         permissions = request.data.get("permissions", [])
 
-        # Handle role assignment
-        if role_id:
-            try:
-                from .models import Role
-                role_obj = Role.objects.get(id=role_id)
-                role_value = role_obj.key
-            except Role.DoesNotExist:
-                return Response({"detail": f"Invalid role_id '{role_id}'"}, status=status.HTTP_400_BAD_REQUEST)
+        # Validate role
+        valid_roles = dict(CustomUser.ROLE_CHOICES)
+        if role_id not in valid_roles:
+            return Response({"detail": f"Invalid role_id '{role_id}'"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if role_value:
-            valid_roles = dict(CustomUser._meta.get_field("role").choices)
-            if role_value not in valid_roles:
-                return Response({"detail": f"Invalid role '{role_value}'"}, status=status.HTTP_400_BAD_REQUEST)
-            user.role = role_value
+        user.role = role_id
 
-        # Handle permissions assignment
+        # Assign permissions
         if permissions:
             perms_qs = Permission.objects.filter(id__in=permissions)
             user.user_permissions.set(perms_qs)
 
-        # Persist changes
         user.save()
-
         return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
-
 
 class GetUsersByRoleView(APIView):
     """
     Return all users that have a given role.
-    Example request: GET /api/users/by-role/?role=admin
+    Example request: GET /api/users/by-role/?role=2
     """
     permission_classes = [IsAdminUser]
 
     def get(self, request):
-        role_value = request.query_params.get("role")
-        if not role_value:
+        role_id = request.query_params.get("role")
+        if role_id is None:
             return Response({"detail": "Missing role query parameter"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Validate role against choices
-        valid_roles = dict(CustomUser._meta.get_field("role").choices)
-        if role_value not in valid_roles:
-            return Response({"detail": f"Invalid role '{role_value}'"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            role_id = int(role_id)
+        except ValueError:
+            return Response({"detail": "Role must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
 
-        users = CustomUser.objects.filter(role=role_value)
+        # Validate role against choices
+        valid_roles = dict(CustomUser.ROLE_CHOICES)
+        if role_id not in valid_roles:
+            return Response({"detail": f"Invalid role_id '{role_id}'"}, status=status.HTTP_400_BAD_REQUEST)
+
+        users = CustomUser.objects.filter(role=role_id)
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

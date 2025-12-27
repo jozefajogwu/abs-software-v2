@@ -16,10 +16,13 @@ def generate_random_password(length=12):
 
 
 # 🔹 General User Serializer (for listing, updating, admin use)
+from rest_framework import serializers
+from .models import CustomUser
+
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
     profile_image = serializers.ImageField(required=False, allow_null=True)
-    role_label = serializers.SerializerMethodField()  # ✅ Add human-readable role label
+    role_label = serializers.SerializerMethodField()  # ✅ Human-readable role label
 
     class Meta:
         model = CustomUser
@@ -31,10 +34,10 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ['is_active', 'created_at', 'must_change_password']
 
     def get_role_label(self, obj):
-        """Return the human-readable label for the role."""
-        if obj.role:
-            choices = dict(CustomUser._meta.get_field("role").choices)
-            return choices.get(obj.role, obj.role)
+        """Return the human-readable label for the integer role."""
+        if obj.role is not None:
+            choices = dict(CustomUser.ROLE_CHOICES)
+            return choices.get(obj.role)
         return None
 
     def validate_email(self, value):

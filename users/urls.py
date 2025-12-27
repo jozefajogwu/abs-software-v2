@@ -26,6 +26,7 @@ from .views import (
     AssignRoleView,
     UpdateRolesPermissionsView,
     GetUsersByRoleView,
+    CreateUserWithRoleView, # ✅ add this import
 )
 
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -60,4 +61,8 @@ urlpatterns = [
     path('permissions/<str:app_label>/', ListPermissionsByAppView.as_view(), name='permissions-by-app'),
     path('roles/<int:id>/update/', UpdateGroupRoleView.as_view(), name='update-role'),
     path('roles-permissions/', UpdateRolesPermissionsView.as_view(), name='update-roles-permissions'),
+    
+    # User creation with role assignment
+    path('create-with-role/', CreateUserWithRoleView.as_view(), name='create-user-with-role'),
+
 ]
