@@ -1,0 +1,53 @@
+[
+{
+    "model": "safety.safetyincident",
+    "pk": 1,
+    "fields": {
+        "title": null,
+        "incident_date": "2025-12-15",
+        "description": "Spill of hazardous material in lab",
+        "actions_taken": "Area evacuated, cleanup initiated",
+        "incident_status": "reported",
+        "severity": "critical",
+        "location": "Lab 2",
+        "project": "Research Safety",
+        "reported_by": null,
+        "created_at": "2025-12-16T13:42:28.905Z",
+        "updated_at": "2025-12-16T13:42:28.905Z"
+    }
+},
+{
+    "model": "safety.safetyincident",
+    "pk": 2,
+    "fields": {
+        "title": null,
+        "incident_date": "2025-12-15",
+        "description": "Spill of hazardous material in lab",
+        "actions_taken": "Area evacuated, cleanup initiated",
+        "incident_status": "reported",
+        "severity": "critical",
+        "location": "Lab 2",
+        "project": "Research Safety",
+        "reported_by": null,
+        "created_at": "2025-12-18T19:48:28.679Z",
+        "updated_at": "2025-12-18T19:48:28.680Z"
+    }
+},
+{
+    "model": "safety.safetyincident",
+    "pk": 3,
+    "fields": {
+        "title": null,
+        "incident_date": "2025-12-21",
+        "description": "Slip and fall accident in production area",
+        "actions_taken": "First aid administered",
+        "incident_status": "investigating",
+        "severity": "medium",
+        "location": "Factory Floor",
+        "project": "Production Line 3",
+        "reported_by": 2,
+        "created_at": "2025-12-21T22:13:41.840Z",
+        "updated_at": "2025-12-21T22:13:41.840Z"
+    }
+}
+]

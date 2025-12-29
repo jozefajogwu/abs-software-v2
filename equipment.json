@@ -1,0 +1,16 @@
+[
+{
+    "model": "equipment.equipment",
+    "pk": 1,
+    "fields": {
+        "equipment_name": "Drill Machine",
+        "equipment_type": "Power Tools",
+        "serial_number": "DRL-001",
+        "purchase_date": "2023-06-15",
+        "purchase_cost": "15000.00",
+        "status": "active",
+        "created_at": "2025-10-03T06:50:33.132Z",
+        "updated_at": "2025-10-03T06:50:33.132Z"
+    }
+}
+]

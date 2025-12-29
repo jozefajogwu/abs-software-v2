@@ -122,17 +122,33 @@ WSGI_APPLICATION = 'abv_management.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
  
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.postgresql',
+#        'NAME': 'aby_system_db',
+#        'USER': 'aby_system_db_user',
+#        'PASSWORD': 'RselGtfEqEEDwNDyMS9x6VnXUJI0F4cc',
+#       'HOST': 'dpg-d586taili9vc739ssi80-a.oregon-postgres.render.com',
+#        'PORT': '5432',
+#    }
+#}
+
+import dj_database_url
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'aby_system_db',
-        'USER': 'aby_system_db_user',
-        'PASSWORD': 'RselGtfEqEEDwNDyMS9x6VnXUJI0F4cc',
-        'HOST': 'dpg-d586taili9vc739ssi80-a.oregon-postgres.render.com',
-        'PORT': '5432',
-    }
+    'default': dj_database_url.parse(
+        "postgresql://aby_system_db_user:RselGtfEqEEDwNDyMS9x6VnXUJI0F4cc@dpg-d586taili9vc739ssi80-a.oregon-postgres.render.com/aby_system_db",
+        conn_max_age=600,
+        ssl_require=True
+    )
 }
 
+#DATABASES = {
+#  'default': {
+#      'ENGINE': 'django.db.backends.sqlite3',
+#       'NAME': BASE_DIR / 'db.sqlite3',
+#  }
+#}
 
 
 

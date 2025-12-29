@@ -1,0 +1,69 @@
+[
+{
+    "model": "projects.project",
+    "pk": 1,
+    "fields": {
+        "project_name": "Building Down Tower",
+        "location": "Kaduna",
+        "start_date": "2021-05-15",
+        "end_date": "2022-05-15",
+        "budget": "120000.00",
+        "status": "Active",
+        "owner": 6,
+        "created_at": "2025-11-12T16:27:23.089Z",
+        "updated_at": "2025-11-12T16:27:23.089Z",
+        "assigned_team": [
+            2,
+            7,
+            9,
+            11,
+            12
+        ],
+        "equipment": [],
+        "inventory": []
+    }
+},
+{
+    "model": "projects.project",
+    "pk": 2,
+    "fields": {
+        "project_name": "Solar Grid Expansion",
+        "location": "Minna",
+        "start_date": "2023-01-10",
+        "end_date": "2023-12-20",
+        "budget": "85000.00",
+        "status": "Completed",
+        "owner": 9,
+        "created_at": "2025-11-12T16:31:12.876Z",
+        "updated_at": "2025-11-12T16:31:12.876Z",
+        "assigned_team": [
+            12,
+            13
+        ],
+        "equipment": [],
+        "inventory": []
+    }
+},
+{
+    "model": "projects.project",
+    "pk": 3,
+    "fields": {
+        "project_name": "Water Treatment Facility",
+        "location": "Makurdi",
+        "start_date": "2024-03-01",
+        "end_date": "2025-02-28",
+        "budget": "150000.00",
+        "status": "Active",
+        "owner": 10,
+        "created_at": "2025-11-12T16:32:37.966Z",
+        "updated_at": "2025-11-12T16:32:37.966Z",
+        "assigned_team": [
+            5,
+            7,
+            11
+        ],
+        "equipment": [],
+        "inventory": []
+    }
+}
+]
