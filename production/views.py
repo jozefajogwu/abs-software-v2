@@ -1,19 +1,32 @@
 from django.shortcuts import render
-
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from .models import Operation, Maintenance, Production
-from .serializers import OperationSerializer, MaintenanceSerializer, ProductionSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import Sum
-from .models import Operation, Maintenance
+from django.utils.dateparse import parse_date
 
-# Operation endpoints
+from .models import Operation, Maintenance, Production
+from .serializers import OperationSerializer, MaintenanceSerializer, ProductionSerializer
+
+
+# --- Operation endpoints ---
 class OperationListCreateView(generics.ListCreateAPIView):
-    queryset = Operation.objects.all().order_by('-date')
     serializer_class = OperationSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = Operation.objects.all().order_by('-date')
+        start = self.request.query_params.get('start')
+        end = self.request.query_params.get('end')
+
+        if start and end:
+            start_date = parse_date(start)
+            end_date = parse_date(end)
+            if start_date and end_date:
+                queryset = queryset.filter(date__range=[start_date, end_date])
+        return queryset
+
 
 class OperationDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Operation.objects.all()
@@ -22,11 +35,23 @@ class OperationDetailView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = 'id'
 
 
-# Maintenance endpoints
+# --- Maintenance endpoints ---
 class MaintenanceListCreateView(generics.ListCreateAPIView):
-    queryset = Maintenance.objects.all().order_by('-date')
     serializer_class = MaintenanceSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = Maintenance.objects.all().order_by('-date')
+        start = self.request.query_params.get('start')
+        end = self.request.query_params.get('end')
+
+        if start and end:
+            start_date = parse_date(start)
+            end_date = parse_date(end)
+            if start_date and end_date:
+                queryset = queryset.filter(date__range=[start_date, end_date])
+        return queryset
+
 
 class MaintenanceDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Maintenance.objects.all()
@@ -35,11 +60,23 @@ class MaintenanceDetailView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = 'id'
 
 
-# Production endpoints
+# --- Production endpoints ---
 class ProductionListCreateView(generics.ListCreateAPIView):
-    queryset = Production.objects.all().order_by('-date')
     serializer_class = ProductionSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = Production.objects.all().order_by('-date')
+        start = self.request.query_params.get('start')
+        end = self.request.query_params.get('end')
+
+        if start and end:
+            start_date = parse_date(start)
+            end_date = parse_date(end)
+            if start_date and end_date:
+                queryset = queryset.filter(date__range=[start_date, end_date])
+        return queryset
+
 
 class ProductionDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Production.objects.all()
@@ -48,14 +85,22 @@ class ProductionDetailView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = 'id'
 
 
-#Summary Views
-
-
+# --- Summary Views ---
 class OperationSummaryView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        totals = Operation.objects.aggregate(
+        start = request.query_params.get('start')
+        end = request.query_params.get('end')
+        queryset = Operation.objects.all()
+
+        if start and end:
+            start_date = parse_date(start)
+            end_date = parse_date(end)
+            if start_date and end_date:
+                queryset = queryset.filter(date__range=[start_date, end_date])
+
+        totals = queryset.aggregate(
             total_income=Sum('income'),
             total_expenditure=Sum('expenditure'),
             total_balance=Sum('balance')
@@ -67,7 +112,17 @@ class MaintenanceSummaryView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        totals = Maintenance.objects.aggregate(
+        start = request.query_params.get('start')
+        end = request.query_params.get('end')
+        queryset = Maintenance.objects.all()
+
+        if start and end:
+            start_date = parse_date(start)
+            end_date = parse_date(end)
+            if start_date and end_date:
+                queryset = queryset.filter(date__range=[start_date, end_date])
+
+        totals = queryset.aggregate(
             total_income=Sum('income'),
             total_expenditure=Sum('expenditure'),
             total_balance=Sum('balance')
