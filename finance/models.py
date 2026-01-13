@@ -1,19 +1,32 @@
 from django.db import models
+from django.utils import timezone
 
-# Create your models here.
-# finance/models.py
+
 
 class FinanceRecord(models.Model):
-    TRANSACTION_TYPES = (
-        ('revenue', 'Revenue'),
+    TYPE_CHOICES = (
+        ('income', 'Income'),
         ('expense', 'Expense'),
     )
+    CATEGORY_CHOICES = (
+        ('operations', 'Operations'),
+        ('maintenance', 'Maintenance'),
+    )
 
-    type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
-    description = models.TextField(blank=True)
-    date = models.DateField(auto_now_add=True)
-    activity = models.CharField(max_length=100, default='General')
+    description = models.CharField(max_length=255)
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    transaction_type = models.CharField(
+        max_length=10,
+        choices=TYPE_CHOICES,
+        default='income'
+    )
+    category = models.CharField(
+        max_length=20,
+        choices=CATEGORY_CHOICES,
+        default='operations'
+    )
+    date = models.DateField()
+    created_at = models.DateTimeField(default=timezone.now)  # 👈 use default instead of auto_now_add
 
     def __str__(self):
-        return f"{self.type.title()} - ₦{self.amount} on {self.date}"
+        return f"{self.description} - ₦{self.amount}"

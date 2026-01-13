@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'operations',
     'safety',
     'transaction',
+    'production',
     'reports',
     'django.contrib.admin',
     'django.contrib.auth',

@@ -50,6 +50,10 @@ urlpatterns = [
 
     # Dashboard summary
     path('api/summary/', DashboardSummary.as_view()),
+    
+    
+    # Production app routes 
+    path('', include('production.urls')), # ✅ add this line
 ]
 
 # 🖼️ Serve media files during development
