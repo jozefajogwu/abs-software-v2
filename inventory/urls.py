@@ -5,8 +5,10 @@ from .views import (
     InventorySummaryView
 )
 
+app_name = "inventory"  # 👈 namespace
+
 urlpatterns = [
-    path('', InventoryListCreateView.as_view(), name='inventory-list-create'),
-    path('<int:id>/', InventoryDetailView.as_view(), name='inventory-detail'),
-    path('summary/', InventorySummaryView.as_view(), name='inventory-summary'),
+    path('items/', InventoryListCreateView.as_view(), name='items-list-create'),
+    path('items/<int:id>/', InventoryDetailView.as_view(), name='items-detail'),
+    path('summary/', InventorySummaryView.as_view(), name='summary'),
 ]

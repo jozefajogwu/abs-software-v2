@@ -1,18 +1,30 @@
-from django.shortcuts import render
-
-# Create your views here.
 from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Sum, F
+from django.db.models import Sum
+from django.utils.dateparse import parse_date
 from .models import Inventory
 from .serializers import InventorySerializer
 
+
+# --- CRUD Endpoints ---
 class InventoryListCreateView(generics.ListCreateAPIView):
-    queryset = Inventory.objects.all()
     serializer_class = InventorySerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = Inventory.objects.all().order_by('-created_at')
+        start = self.request.query_params.get('start')
+        end = self.request.query_params.get('end')
+
+        if start and end:
+            start_date = parse_date(start)
+            end_date = parse_date(end)
+            if start_date and end_date:
+                queryset = queryset.filter(created_at__date__range=[start_date, end_date])
+        return queryset
+
 
 class InventoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Inventory.objects.all()
@@ -20,18 +32,30 @@ class InventoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
     lookup_field = 'id'
 
+
+# --- Summary Endpoint ---
 class InventorySummaryView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        total_stock = Inventory.objects.aggregate(total=Sum('quantity'))['total'] or 0
-        low_stock_items = Inventory.objects.filter(quantity__lte=F('quantity') * 0.2)
-        critical_items = Inventory.objects.filter(status='critical')
-        low_stock_data = InventorySerializer(low_stock_items, many=True).data
-        critical_data = InventorySerializer(critical_items, many=True).data
+        start = request.query_params.get('start')
+        end = request.query_params.get('end')
+        queryset = Inventory.objects.all()
+
+        if start and end:
+            start_date = parse_date(start)
+            end_date = parse_date(end)
+            if start_date and end_date:
+                queryset = queryset.filter(created_at__date__range=[start_date, end_date])
+
+        total_stock = queryset.aggregate(total=Sum('quantity'))['total'] or 0
+
+        # Example: flag items with quantity < 10 as "low stock"
+        low_stock_items = queryset.filter(quantity__lt=10)
+        critical_items = queryset.filter(status='critical')
 
         return Response({
             "total_stock": total_stock,
-            "low_stock_alerts": low_stock_data,
-            "critical_items": critical_data
+            "low_stock_alerts": InventorySerializer(low_stock_items, many=True).data,
+            "critical_items": InventorySerializer(critical_items, many=True).data
         })
