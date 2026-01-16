@@ -1,4 +1,5 @@
 from django.urls import path
+
 from .views import (
     # User management
     UserListCreateView,
@@ -27,6 +28,10 @@ from .views import (
     UpdateRolesPermissionsView,
     GetUsersByRoleView,
     CreateUserWithRoleView, # ✅ add this import
+    
+    # Employee management
+    EmployeeListCreateView, 
+    EmployeeDetailView
 )
 
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -64,5 +69,13 @@ urlpatterns = [
     
     # User creation with role assignment
     path('create-with-role/', CreateUserWithRoleView.as_view(), name='create-user-with-role'),
+    
+    # Employee endpoints
+    path('employees/', EmployeeListCreateView.as_view(), name='employee-list-create'),
+    path('employees/<int:id>/', EmployeeDetailView.as_view(), name='employee-detail'),
+    # other user-related routes...
+
+
+
 
 ]

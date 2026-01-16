@@ -3,6 +3,10 @@ from django.contrib.auth import authenticate, get_user_model, login
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_decode
 from django.shortcuts import get_object_or_404
+from rest_framework import generics
+from .models import Employee
+from .serializers import EmployeeSerializer
+from rest_framework.permissions import IsAuthenticated
 
 from rest_framework import permissions, status, generics
 from rest_framework.response import Response
@@ -385,3 +389,17 @@ class GetUsersByRoleView(APIView):
         users = CustomUser.objects.filter(role=role_id)
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+
+class EmployeeListCreateView(generics.ListCreateAPIView):
+    queryset = Employee.objects.all().order_by('id')
+    serializer_class = EmployeeSerializer
+    permission_classes = [IsAuthenticated]
+
+class EmployeeDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'id'
+

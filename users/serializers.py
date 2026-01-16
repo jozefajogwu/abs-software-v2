@@ -1,6 +1,7 @@
 import string
 import secrets
 from rest_framework import serializers
+from .models import Employee
 from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.models import Permission, Group
 from .models import Role, CustomUser
@@ -142,3 +143,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             "role_label": dict(CustomUser._meta.get_field("role").choices).get(user.role, user.role)
         }
         return data
+
+
+
+class EmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Employee
+        fields = '__all__'
