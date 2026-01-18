@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     
     'users',
     'dashboard',
+    'activity',
     'category',
     'corsheaders',
     'accounts',
