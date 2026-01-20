@@ -5,6 +5,8 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from .models import Project
 from .serializers import ProjectSerializer
 from users.models import CustomUser
+from activity.utils import log_activity   # <-- import logger
+
 
 # List and Create Projects
 class ProjectListCreateView(generics.ListCreateAPIView):
@@ -12,11 +14,46 @@ class ProjectListCreateView(generics.ListCreateAPIView):
     serializer_class = ProjectSerializer
     permission_classes = [IsAuthenticated]
 
+    def perform_create(self, serializer):
+        project = serializer.save()
+        log_activity(
+            user=self.request.user,
+            app_name="projects",
+            model_name="Project",
+            object_id=project.id,
+            action="create",
+            description=f"Created project: {project.name}"
+        )
+
+
 # Retrieve, Update, Delete a Project
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     permission_classes = [IsAuthenticated]
+
+    def perform_update(self, serializer):
+        project = serializer.save()
+        log_activity(
+            user=self.request.user,
+            app_name="projects",
+            model_name="Project",
+            object_id=project.id,
+            action="update",
+            description=f"Updated project: {project.name}"
+        )
+
+    def perform_destroy(self, instance):
+        log_activity(
+            user=self.request.user,
+            app_name="projects",
+            model_name="Project",
+            object_id=instance.id,
+            action="delete",
+            description=f"Deleted project: {instance.name}"
+        )
+        instance.delete()
+
 
 # Assign Users to a Project
 class AssignUsersToProjectView(APIView):
@@ -33,6 +70,15 @@ class AssignUsersToProjectView(APIView):
         project.assigned_team.set(users)
         project.save()
 
+        log_activity(
+            user=request.user,
+            app_name="projects",
+            model_name="Project",
+            object_id=project.id,
+            action="update",
+            description=f"Assigned users {[u.username for u in users]} to project {project.name}"
+        )
+
         return Response({"message": "Users assigned successfully"}, status=status.HTTP_200_OK)
 
 
@@ -47,6 +93,16 @@ class ProjectStatsView(APIView):
         delayed = Project.objects.filter(status="On Hold").count()   # mapped to delayed
         cancelled = Project.objects.filter(status="Cancelled").count()
         archived = Project.objects.filter(status="Archived").count()
+
+        # Log stats view
+        log_activity(
+            user=request.user,
+            app_name="projects",
+            model_name="Project",
+            object_id=None,
+            action="view",
+            description="Viewed project stats"
+        )
 
         return Response({
             "total_projects": total,

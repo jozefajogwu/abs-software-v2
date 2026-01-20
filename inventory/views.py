@@ -6,6 +6,7 @@ from django.db.models import Sum
 from django.utils.dateparse import parse_date
 from .models import Inventory
 from .serializers import InventorySerializer
+from activity.utils import log_activity   # <-- import the logger
 
 
 # --- CRUD Endpoints ---
@@ -25,12 +26,45 @@ class InventoryListCreateView(generics.ListCreateAPIView):
                 queryset = queryset.filter(created_at__date__range=[start_date, end_date])
         return queryset
 
+    def perform_create(self, serializer):
+        item = serializer.save(user=self.request.user)
+        log_activity(
+            user=self.request.user,
+            app_name="inventory",
+            model_name="Inventory",
+            object_id=item.id,
+            action="create",
+            description=f"Added inventory item {item.item_name}"
+        )
+
 
 class InventoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Inventory.objects.all()
     serializer_class = InventorySerializer
     permission_classes = [IsAuthenticated]
     lookup_field = 'id'
+
+    def perform_update(self, serializer):
+        item = serializer.save()
+        log_activity(
+            user=self.request.user,
+            app_name="inventory",
+            model_name="Inventory",
+            object_id=item.id,
+            action="update",
+            description=f"Updated inventory item {item.item_name}"
+        )
+
+    def perform_destroy(self, instance):
+        log_activity(
+            user=self.request.user,
+            app_name="inventory",
+            model_name="Inventory",
+            object_id=instance.id,
+            action="delete",
+            description=f"Deleted inventory item {instance.item_name}"
+        )
+        instance.delete()
 
 
 # --- Summary Endpoint ---
