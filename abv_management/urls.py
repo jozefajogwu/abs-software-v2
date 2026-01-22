@@ -54,6 +54,9 @@ urlpatterns = [
     
     # Production app routes 
     path('', include('production.urls')), # ✅ add this line
+    
+    # ... recent activity...
+    path('api/activity/', include('activity.urls')),
 ]
 
 # 🖼️ Serve media files during development
