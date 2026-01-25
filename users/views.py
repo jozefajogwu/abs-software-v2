@@ -265,6 +265,21 @@ class GetUsersByRoleView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+class UserRoleView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, id):
+        user = get_object_or_404(CustomUser, id=id)
+        role_display = dict(CustomUser.ROLE_CHOICES).get(user.role, "Unknown")
+        return Response({
+            "id": user.id,
+            "username": user.username,
+            "role_id": user.role,
+            "role_name": role_display
+        }, status=status.HTTP_200_OK)
+
+
+
 # ────────────────────────────────────────────────────────────────
 # Activation view
 # ────────────────────────────────────────────────────────────────

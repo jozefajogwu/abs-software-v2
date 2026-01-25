@@ -13,6 +13,7 @@ from .views import (
     # Roles
     RoleListView,
     RoleCreateView,
+    UserRoleView,
 
     # Auth
     SignupView,
@@ -31,7 +32,7 @@ from .views import (
     
     # Employee management
     EmployeeListCreateView, 
-    EmployeeDetailView
+    EmployeeDetailView,
 )
 
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -50,6 +51,7 @@ urlpatterns = [
     path('roles/', RoleListView.as_view(), name='role-list'),
     path('roles/create/', RoleCreateView.as_view(), name='role-create'),
     path('roles/by-role/', GetUsersByRoleView.as_view(), name='users-by-role'),  # ✅ updated
+    path('<int:id>/role/', UserRoleView.as_view(), name='user-role'),
 
     # Assign role directly via CustomUser.role
     path('<int:id>/assign-role/', AssignRoleView.as_view(), name='assign-role'),
