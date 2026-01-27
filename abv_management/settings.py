@@ -139,7 +139,7 @@ import dj_database_url
 
 DATABASES = {
     'default': dj_database_url.parse(
-        "postgresql://aby_system_db_user:RselGtfEqEEDwNDyMS9x6VnXUJI0F4cc@dpg-d586taili9vc739ssi80-a.oregon-postgres.render.com/aby_system_db",
+        "postgresql://aby_system_db2_user:Bvz65cV4uDOkeipMDaDTLZAiTsndUQ0l@dpg-d5sjqk0gjchc73b0icl0-a/aby_system_db2",
         conn_max_age=600,
         ssl_require=True
     )
