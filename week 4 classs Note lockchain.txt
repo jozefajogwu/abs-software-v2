@@ -1,0 +1,38 @@
+C4li55n!
+
+the measurement of the amount of work to perfom a transaction is called gas
+
+why does ethereum use wei and not ether
+ what are the ethereum specifications needed for a node to be part of the ethreum network, the
+15th Sept 2022
+consensus client: brings all the nodes to the same state on the network.
+execution client: verfiies and executes all the transactions in the evm, the communicate using the engine api, as seen the image in mastering ethereum.
+
+Dev P2P,is the protocol P2p uses (base protocol)
+devp2p (base protocol)
+eth (block & transaction gossip)
+snap (state sync)
+discv4 / discv5 (peer discovery)
+
+standardized communication protocols. is the engine API
+
+Execution Clients (EL) Different teams o the execution clients, we have different teams to prevent centralisation,bugs
+
+Geth
+
+Nethermind
+
+Besu
+
+Erigon
+
+
+research on the different kinds of nodes( full node and archive node)
+
+
+
+transactions can exist without a block on a meme pool,it might not be valid transaction, the have a status of pending, so basically the meme pool is a waiting room for transactions,
+
+
+Chack the difference between a remote client and a wallet?
+how does a brand new Ethereum node find its pair?
