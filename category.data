@@ -1,0 +1,56 @@
+python manage.py loaddata category.json
+python manage.py loaddata dashboard.json
+Traceback (most recent call last):
+  File "C:\Users\HP\Documents\ABS SOFTWARE\.venv\Lib\site-packages\django\core\serializers\json.py", line 71, in __init__
+    objects = json.loads(stream_or_string)
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\json\decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\json\decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\HP\Documents\ABS SOFTWARE\abv_management\manage.py", line 22, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\HP\Documents\ABS SOFTWARE\abv_management\manage.py", line 18, in main
+    execute_from_command_line(sys.argv)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\HP\Documents\ABS SOFTWARE\.venv\Lib\site-packages\django\core\management\__init__.py", line 442, in execute_from_command_line
+    utility.execute()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\HP\Documents\ABS SOFTWARE\.venv\Lib\site-packages\django\core\management\__init__.py", line 436, in execute     
+    self.fetch_command(subcommand).run_from_argv(self.argv)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "C:\Users\HP\Documents\ABS SOFTWARE\.venv\Lib\site-packages\django\core\management\base.py", line 416, in run_from_argv   
+    self.execute(*args, **cmd_options)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\HP\Documents\ABS SOFTWARE\.venv\Lib\site-packages\django\core\management\base.py", line 460, in execute
+    output = self.handle(*args, **options)
+  File "C:\Users\HP\Documents\ABS SOFTWARE\.venv\Lib\site-packages\django\core\management\commands\loaddata.py", line 103, in handle
+    self.loaddata(fixture_labels)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\HP\Documents\ABS SOFTWARE\.venv\Lib\site-packages\django\core\management\commands\loaddata.py", line 164, in loaddata
+    self.load_label(fixture_label)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\HP\Documents\ABS SOFTWARE\.venv\Lib\site-packages\django\core\management\commands\loaddata.py", line 244, in load_label
+    objects = serializers.deserialize(
+        ser_fmt,
+    ...<3 lines>...
+        handle_forward_references=True,
+    )
+  File "C:\Users\HP\Documents\ABS SOFTWARE\.venv\Lib\site-packages\django\core\serializers\__init__.py", line 146, in deserialize
+    return d(stream_or_string, **options)
+  File "C:\Users\HP\Documents\ABS SOFTWARE\.venv\Lib\site-packages\django\core\serializers\json.py", line 73, in __init__        
+    raise DeserializationError() from exc
+django.core.serializers.base.DeserializationError: Problem installing fixture 'C:\Users\HP\Documents\ABS SOFTWARE\abv_management\category.json':
+CommandError: No fixture named 'dashboard' found.
+(.venv) 
+HP@JozefAjogwu007 MINGW64 ~/Documents/ABS SOFTWARE/abv_management (main)
+$

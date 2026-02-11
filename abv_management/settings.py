@@ -117,14 +117,37 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "abv_management.wsgi.application"
 
-# Database
+
+import os
+import dj_database_url
+
+
+
 DATABASES = {
-    "default": dj_database_url.parse(
-        os.getenv("DATABASE_URL"),
+    'default': dj_database_url.config(
+        default=os.environ.get("DATABASE_URL"),
         conn_max_age=600,
-        ssl_require=True,
+        ssl_require=True   # 🔑 Neon requires SSL
     )
 }
+
+
+#Database
+#DATABASES = {
+#    "default": dj_database_url.parse(
+#        os.getenv("DATABASE_URL"),
+#        conn_max_age=600,
+#        ssl_require=True,
+#    )
+#}
+
+
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.sqlite3',
+#        'NAME': BASE_DIR / 'db.sqlite3',
+#    }
+#}
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
