@@ -12,10 +12,11 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 import dj_database_url
+from decouple import config
 from datetime import timedelta
 
 # Load environment variables from .env file
-#load_dotenv()
+load_dotenv()
 
 # Build paths inside the project
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -151,6 +152,15 @@ WSGI_APPLICATION = "abv_management.wsgi.application"
 #        ssl_require=True,
 #    )
 #}
+#Database# settings.py
+
+DATABASES = {
+    "default": dj_database_url.parse(
+        os.getenv("DATABASE_URL"), 
+        conn_max_age=600, 
+        ssl_require=True
+    )
+}
 
 
 DATABASES = {
