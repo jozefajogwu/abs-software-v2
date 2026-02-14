@@ -8,7 +8,6 @@ import os
 from dotenv import load_dotenv
 from urllib.parse import urlparse, parse_qsl
 
-load_dotenv()
 from pathlib import Path
 import os
 from dotenv import load_dotenv
@@ -16,7 +15,7 @@ import dj_database_url
 from datetime import timedelta
 
 # Load environment variables from .env file
-load_dotenv()
+#load_dotenv()
 
 # Build paths inside the project
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,8 +24,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-default-key")
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
+CSRF_TRUSTED_ORIGINS = ["https://abs-software-v2-s2qp.onrender.com",
+                        "https://aby-sigma.vercel.app",
+                        ]
 ALLOWED_HOSTS = [
-    "https://abs-software-v2-s2qp.onrender.com",
+    "abs-software-v2-s2qp.onrender.com",
     "aby-sigma.vercel.app",
     "127.0.0.1",
     "localhost",
