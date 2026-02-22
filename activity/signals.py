@@ -9,6 +9,8 @@ from projects.models import Project
 from equipment.models import Equipment
 from safety.models import SafetyIncident
 from inventory.models import Inventory
+from operations.models import OperationRecord, MaintenanceRecord
+
 
 # --- PROJECTS ---
 @receiver(post_save, sender=Project)
@@ -107,4 +109,53 @@ def log_inventory_delete(sender, instance, **kwargs):
         object_id=instance.id,
         action="delete",
         description=f"Deleted inventory item {instance.name}"
+    )
+
+
+# --- OPERATIONS ---
+@receiver(post_save, sender=OperationRecord)
+def log_operation_save(sender, instance, created, **kwargs):
+    action = "create" if created else "update"
+    RecentActivity.objects.create(
+        user=getattr(instance, "performed_by", None),
+        app_name="operations",
+        model_name="OperationRecord",
+        object_id=instance.id,
+        action=action,
+        description=f"{action.capitalize()} operation record {instance.id}"
+    )
+
+@receiver(post_delete, sender=OperationRecord)
+def log_operation_delete(sender, instance, **kwargs):
+    RecentActivity.objects.create(
+        user=getattr(instance, "performed_by", None),
+        app_name="operations",
+        model_name="OperationRecord",
+        object_id=instance.id,
+        action="delete",
+        description=f"Deleted operation record {instance.id}"
+    )
+
+
+@receiver(post_save, sender=MaintenanceRecord)
+def log_maintenance_save(sender, instance, created, **kwargs):
+    action = "create" if created else "update"
+    RecentActivity.objects.create(
+        user=getattr(instance, "performed_by", None),
+        app_name="operations",
+        model_name="MaintenanceRecord",
+        object_id=instance.id,
+        action=action,
+        description=f"{action.capitalize()} maintenance record {instance.id}"
+    )
+
+@receiver(post_delete, sender=MaintenanceRecord)
+def log_maintenance_delete(sender, instance, **kwargs):
+    RecentActivity.objects.create(
+        user=getattr(instance, "performed_by", None),
+        app_name="operations",
+        model_name="MaintenanceRecord",
+        object_id=instance.id,
+        action="delete",
+        description=f"Deleted maintenance record {instance.id}"
     )
