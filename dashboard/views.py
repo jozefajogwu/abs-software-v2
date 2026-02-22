@@ -19,6 +19,8 @@ from rest_framework.generics import ListAPIView
 from transaction.models import Transaction
 from rest_framework.permissions import IsAuthenticated
 from .serializers import TransactionSerializer
+        
+from activity.models import RecentActivity
 
 
 
@@ -109,44 +111,35 @@ class MaintenanceSummary(APIView):
             "monthly": list(monthly),
             "yearly": list(yearly)
         })
-        
+
+
+
+
 class RecentActivityFeed(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request):
+        app_filter = request.query_params.get("app_name")
+        logs = RecentActivity.objects.select_related("user").order_by("-created_at")[:20]
+
+        if app_filter:
+            logs = logs.filter(app_name=app_filter)
+
         activities = []
-
-        # Recent Projects
-        recent_projects = Project.objects.order_by('-created_at')[:5]
-        for project in recent_projects:
+        for log in logs:
             activities.append({
-                "type": "project",
-                "message": f"New Project '{project.name}' created",
-                "timestamp": project.created_at
+                "id": log.id,
+                "user": log.user.email if log.user else "System",
+                "app_name": log.app_name,
+                "model_name": log.model_name,
+                "object_id": log.object_id,
+                "action": log.get_action_display(),
+                "description": log.description,
+                "created_at": log.created_at.isoformat(),
             })
 
-        # Recent Safety Incidents
-        recent_incidents = SafetyIncident.objects.order_by('created_at')[:5]
-        for incident in recent_incidents:
-            activities.append({
-                "type": "incident",
-                "message": f"Safety incident report for '{incident.location}'",
-                "timestamp": incident.created_at
-            })
+        return Response(activities)
 
-        # Recent Maintenance
-        recent_maintenance = MaintenanceRecord.objects.order_by('-performed_at')[:5]
-        for record in recent_maintenance:
-            activities.append({
-                "type": "maintenance",
-                "message": f"{record.equipment.name} maintenance completed",
-                "timestamp": record.performed_at
-            })
-
-        # Sort all activities by timestamp descending
-        activities.sort(key=lambda x: x['timestamp'], reverse=True)
-        return Response(activities)  # ✅ This line is critical
-    
 class FinancialSummary(APIView):
     permission_classes = [IsAdminUser]
 
