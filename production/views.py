@@ -11,6 +11,7 @@ from .serializers import OperationSerializer, MaintenanceSerializer, ProductionS
 from activity.utils import log_activity   # <-- import logger
 
 
+
 # --- Operation endpoints ---
 class OperationListCreateView(generics.ListCreateAPIView):
     serializer_class = OperationSerializer
@@ -250,3 +251,8 @@ class MaintenanceSummaryView(APIView):
         )
 
         return Response(totals)
+    
+
+
+
+

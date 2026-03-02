@@ -7,6 +7,8 @@ from django.utils.dateparse import parse_date
 from .models import Inventory
 from .serializers import InventorySerializer
 from activity.utils import log_activity   # <-- import the logger
+from users.permissions import IsInventoryManager
+
 
 
 # --- CRUD Endpoints ---
@@ -92,4 +94,22 @@ class InventorySummaryView(APIView):
             "total_stock": total_stock,
             "low_stock_alerts": InventorySerializer(low_stock_items, many=True).data,
             "critical_items": InventorySerializer(critical_items, many=True).data
+        })
+
+
+
+class InventoryStatus(APIView):
+    permission_classes = [IsInventoryManager]
+
+    def get(self, request):
+        total = Inventory.objects.count()
+        status_counts = {
+            "good": Inventory.objects.filter(status='good').count(),
+            "average": Inventory.objects.filter(status='average').count(),
+            "critical": Inventory.objects.filter(status='critical').count(),
+        }
+
+        return Response({
+            "total": total,
+            "status": status_counts
         })

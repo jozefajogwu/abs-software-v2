@@ -9,6 +9,7 @@ from datetime import timedelta
 from .models import SafetyIncident, RiskAssessment
 from .serializers import SafetyIncidentSerializer, RiskAssessmentSerializer
 from activity.utils import log_activity   # <-- import logger
+from users.permissions import IsSafetyOfficer
 
 
 def profile(request):
@@ -114,3 +115,22 @@ class RiskAssessmentViewSet(viewsets.ModelViewSet):
             description=f"Deleted risk assessment: {instance.title}"
         )
         instance.delete()
+        
+        
+
+# Only safety officers can access this permissions
+class SafetySummary(APIView):
+    permission_classes = [IsSafetyOfficer]
+
+    def get(self, request):
+        # Only safety officers can access this
+        total_incidents = SafetyIncident.objects.count()
+        open_incidents = SafetyIncident.objects.filter(status="open").count()
+        closed_incidents = SafetyIncident.objects.filter(status="closed").count()
+
+        return Response({
+            "total_incidents": total_incidents,
+            "open_incidents": open_incidents,
+            "closed_incidents": closed_incidents
+        })
+

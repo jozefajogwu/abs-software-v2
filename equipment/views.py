@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from .models import Equipment
 from .serializers import EquipmentSerializer
 from activity.utils import log_activity
+from users.permissions import IsEquipmentManager
 
 
 class EquipmentListCreateView(generics.ListCreateAPIView):
@@ -113,3 +114,13 @@ class EquipmentStatsView(APIView):
             "repair_equipment": repair,
             "retired_equipment": retired
         })
+
+
+# Only equipment managers can access this
+
+class EquipmentSummary(APIView):
+    permission_classes = [IsEquipmentManager]
+
+    def get(self, request):
+        # Only equipment managers can access this
+        ...
