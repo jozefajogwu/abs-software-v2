@@ -97,7 +97,9 @@ class InventorySummaryView(APIView):
         })
 
 
-
+ # ────────────────────────────────────────────────────────────────
+# Feature: Inventory permission Endpoint (Only for Inventory Managers)
+# ────────────────────────────────────────────────────────────────
 class InventoryStatus(APIView):
     permission_classes = [IsInventoryManager]
 

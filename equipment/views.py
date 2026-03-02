@@ -87,8 +87,13 @@ class EquipmentStatsView(APIView):
         })
 
 
+
+# ────────────────────────────────────────────────────────────────
+# Feature: Equipment permission Endpoint (Only for Equipment Managers)
+# ────────────────────────────────────────────────────────────────
+
 class EquipmentStatsView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsEquipmentManager]
 
     def get(self, request):
         total = Equipment.objects.count()

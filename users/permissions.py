@@ -2,28 +2,24 @@ from rest_framework.permissions import BasePermission
 
 class IsSafetyOfficer(BasePermission):
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == "safety_officer"
-
-class IsOperationsManager(BasePermission):
-    def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == "operations_manager"
-
-class IsProjectManager(BasePermission):
-    def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == "project_manager"
-
-class IsEquipmentManager(BasePermission):
-    def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == "equipment_manager"
+        return request.user.is_authenticated and (
+            request.user.role == 1 or request.user.is_superuser
+        )
 
 class IsInventoryManager(BasePermission):
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == "inventory_manager"
+        return request.user.is_authenticated and (
+            request.user.role == 2 or request.user.is_superuser
+        )
 
-class IsAccountsManager(BasePermission):
+class IsProductionManager(BasePermission):
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == "accounts_manager"
+        return request.user.is_authenticated and (
+            request.user.role == 3 or request.user.is_superuser
+        )
 
-class IsSuperUser(BasePermission):
+class IsEquipmentManager(BasePermission):
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == "superuser"
+        return request.user.is_authenticated and (
+            request.user.role == 4 or request.user.is_superuser
+        )

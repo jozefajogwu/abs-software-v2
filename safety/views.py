@@ -8,7 +8,10 @@ from datetime import timedelta
 
 from .models import SafetyIncident, RiskAssessment
 from .serializers import SafetyIncidentSerializer, RiskAssessmentSerializer
-from activity.utils import log_activity   # <-- import logger
+from activity.utils import log_activity# <-- import logger
+
+
+from rest_framework.views import APIView
 from users.permissions import IsSafetyOfficer
 
 
@@ -116,9 +119,9 @@ class RiskAssessmentViewSet(viewsets.ModelViewSet):
         )
         instance.delete()
         
-        
-
-# Only safety officers can access this permissions
+ # ────────────────────────────────────────────────────────────────
+# Feature: Safety Summary Endpoint (Only for Safety Officers)
+# ────────────────────────────────────────────────────────────────
 class SafetySummary(APIView):
     permission_classes = [IsSafetyOfficer]
 

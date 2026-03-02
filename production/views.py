@@ -10,6 +10,7 @@ from .models import Operation, Maintenance, Production
 from .serializers import OperationSerializer, MaintenanceSerializer, ProductionSerializer
 from activity.utils import log_activity   # <-- import logger
 
+from users.permissions import IsProductionManager
 
 
 # --- Operation endpoints ---
@@ -188,7 +189,7 @@ class ProductionDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 # --- Summary Views ---
 class OperationSummaryView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsProductionManager]
 
     def get(self, request):
         start = request.query_params.get('start')
@@ -207,7 +208,6 @@ class OperationSummaryView(APIView):
             total_balance=Sum('balance')
         )
 
-        # Log summary view
         log_activity(
             user=request.user,
             app_name="production",
@@ -220,8 +220,12 @@ class OperationSummaryView(APIView):
         return Response(totals)
 
 
+# ────────────────────────────────────────────────────────────────
+# Feature: Maintainance permission Endpoint (Only for Production and Maintainance Managers)
+# ────────────────────────────────────────────────────────────────
+
 class MaintenanceSummaryView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsProductionManager]
 
     def get(self, request):
         start = request.query_params.get('start')
@@ -251,7 +255,6 @@ class MaintenanceSummaryView(APIView):
         )
 
         return Response(totals)
-    
 
 
 
