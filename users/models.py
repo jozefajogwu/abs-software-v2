@@ -16,6 +16,7 @@ class CustomUser(AbstractUser):
     role = models.IntegerField(choices=ROLE_CHOICES, blank=True, null=True)
     department = models.CharField(max_length=100, blank=True, null=True)
     profile_image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
+    name = models.CharField(max_length=255, blank=True, null=True)  
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     must_change_password = models.BooleanField(default=False, help_text="Designates whether the user must change their password upon next login.")
