@@ -14,7 +14,9 @@ from operations.models import OperationRecord, MaintenanceRecord
 
 # --- PROJECTS ---
 @receiver(post_save, sender=Project)
-def log_project_save(sender, instance, created, **kwargs):
+def log_project_save(sender, instance, created, raw=False, **kwargs):
+    if raw:
+        return
     action = "create" if created else "update"
     RecentActivity.objects.create(
         user=getattr(instance, "owner", None),
@@ -39,7 +41,9 @@ def log_project_delete(sender, instance, **kwargs):
 
 # --- EQUIPMENT ---
 @receiver(post_save, sender=Equipment)
-def log_equipment_save(sender, instance, created, **kwargs):
+def log_equipment_save(sender, instance, created, raw=False, **kwargs):
+    if raw:
+        return
     action = "create" if created else "update"
     RecentActivity.objects.create(
         user=getattr(instance, "assigned_to", None),
@@ -64,7 +68,9 @@ def log_equipment_delete(sender, instance, **kwargs):
 
 # --- SAFETY INCIDENTS ---
 @receiver(post_save, sender=SafetyIncident)
-def log_incident_save(sender, instance, created, **kwargs):
+def log_incident_save(sender, instance, created, raw=False, **kwargs):
+    if raw:
+        return
     action = "create" if created else "update"
     RecentActivity.objects.create(
         user=getattr(instance, "reported_by", None),
@@ -89,7 +95,9 @@ def log_incident_delete(sender, instance, **kwargs):
 
 # --- INVENTORY ---
 @receiver(post_save, sender=Inventory)
-def log_inventory_save(sender, instance, created, **kwargs):
+def log_inventory_save(sender, instance, created, raw=False, **kwargs):
+    if raw:
+        return
     action = "create" if created else "update"
     RecentActivity.objects.create(
         user=getattr(instance, "updated_by", None),
@@ -114,7 +122,9 @@ def log_inventory_delete(sender, instance, **kwargs):
 
 # --- OPERATIONS ---
 @receiver(post_save, sender=OperationRecord)
-def log_operation_save(sender, instance, created, **kwargs):
+def log_operation_save(sender, instance, created, raw=False, **kwargs):
+    if raw:
+        return
     action = "create" if created else "update"
     RecentActivity.objects.create(
         user=getattr(instance, "performed_by", None),
@@ -138,7 +148,9 @@ def log_operation_delete(sender, instance, **kwargs):
 
 
 @receiver(post_save, sender=MaintenanceRecord)
-def log_maintenance_save(sender, instance, created, **kwargs):
+def log_maintenance_save(sender, instance, created, raw=False, **kwargs):
+    if raw:
+        return
     action = "create" if created else "update"
     RecentActivity.objects.create(
         user=getattr(instance, "performed_by", None),
