@@ -147,12 +147,15 @@ WSGI_APPLICATION = "abv_management.wsgi.application"
 
 #Database
 DATABASES = {
+    
     "default": dj_database_url.parse(
         os.getenv("SUPABASE_DB_URL"),
         conn_max_age=600,
         ssl_require=True,
     )
 }
+# IMPORTANT: Add this line here
+DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
 #Database# settings.py
 
 #DATABASES = {
