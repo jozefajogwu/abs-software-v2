@@ -218,3 +218,16 @@ DEFAULT_FROM_EMAIL = "abydiamondmines62@gmail.com"
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 RESEND_FROM_EMAIL = "onboarding@resend.dev"
+
+import os
+from pathlib import Path
+
+# ... existing code ...
+
+STATIC_URL = 'static/'
+
+# ADD THIS LINE:
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Also ensure you have this to handle the "WhiteNoise" library (standard for Render)
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
