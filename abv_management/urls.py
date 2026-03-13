@@ -53,7 +53,7 @@ urlpatterns = [
     
     
     # Production app routes 
-    path('', include('production.urls')), # ✅ add this line
+    path('api/production/', include('production.urls')),
     
     # ... recent activity...
     path('api/activity/', include('activity.urls')),
