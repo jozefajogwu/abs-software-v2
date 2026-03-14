@@ -5,13 +5,15 @@ from rest_framework.permissions import IsAuthenticated
 from .models import Equipment
 from .serializers import EquipmentSerializer
 from activity.utils import log_activity
-from users.permissions import IsEquipmentManager
+from users.permissions import IsEquipmentManager # ✅ Correctly imported
 
+# --- PROTECTED VIEWS ---
 
 class EquipmentListCreateView(generics.ListCreateAPIView):
     queryset = Equipment.objects.all()
     serializer_class = EquipmentSerializer
-    permission_classes = [IsAuthenticated]
+    # ✅ Only Admin or Role 4 can view/create
+    permission_classes = [IsAuthenticated, IsEquipmentManager]
 
     def perform_create(self, serializer):
         equipment = serializer.save()
@@ -24,11 +26,10 @@ class EquipmentListCreateView(generics.ListCreateAPIView):
             description=f"Added equipment {equipment.name}"
         )
 
-
 class EquipmentUpdateView(generics.UpdateAPIView):
     queryset = Equipment.objects.all()
     serializer_class = EquipmentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsEquipmentManager]
     lookup_field = 'id'
 
     def perform_update(self, serializer):
@@ -42,11 +43,10 @@ class EquipmentUpdateView(generics.UpdateAPIView):
             description=f"Updated equipment {equipment.name}"
         )
 
-
 class EquipmentDeleteView(generics.DestroyAPIView):
     queryset = Equipment.objects.all()
     serializer_class = EquipmentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsEquipmentManager]
     lookup_field = 'id'
 
     def perform_destroy(self, instance):
@@ -59,17 +59,16 @@ class EquipmentDeleteView(generics.DestroyAPIView):
             description=f"Deleted equipment {instance.name}"
         )
         instance.delete()
-        
+
 class EquipmentDetailView(generics.RetrieveAPIView):
     queryset = Equipment.objects.all()
     serializer_class = EquipmentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsEquipmentManager]
     lookup_field = 'id'
-    
-
 
 class EquipmentStatsView(APIView):
-    permission_classes = [IsAuthenticated]
+    # ✅ Applied to the stats view as well
+    permission_classes = [IsAuthenticated, IsEquipmentManager]
 
     def get(self, request):
         total = Equipment.objects.count()
@@ -78,36 +77,11 @@ class EquipmentStatsView(APIView):
         repair = Equipment.objects.filter(status="Under Maintenance").count()
         retired = Equipment.objects.filter(status="Retired").count()
 
-        return Response({
-            "total_equipment": total,
-            "available_equipment": available,
-            "active_equipment": active,
-            "repair_equipment": repair,
-            "retired_equipment": retired
-        })
-
-
-
-# ────────────────────────────────────────────────────────────────
-# Feature: Equipment permission Endpoint (Only for Equipment Managers)
-# ────────────────────────────────────────────────────────────────
-
-class EquipmentStatsView(APIView):
-    permission_classes = [IsEquipmentManager]
-
-    def get(self, request):
-        total = Equipment.objects.count()
-        available = Equipment.objects.filter(status="Available").count()
-        active = Equipment.objects.filter(status="In Use").count()
-        repair = Equipment.objects.filter(status="Under Maintenance").count()
-        retired = Equipment.objects.filter(status="Retired").count()
-
-        # Log activity when stats are viewed
         log_activity(
             user=request.user,
             app_name="equipment",
             model_name="Equipment",
-            object_id=None,  # no specific object, it's a summary
+            object_id=None,
             action="view",
             description="Viewed equipment stats"
         )
@@ -119,13 +93,3 @@ class EquipmentStatsView(APIView):
             "repair_equipment": repair,
             "retired_equipment": retired
         })
-
-
-# Only equipment managers can access this
-
-class EquipmentSummary(APIView):
-    permission_classes = [IsEquipmentManager]
-
-    def get(self, request):
-        # Only equipment managers can access this
-        ...
