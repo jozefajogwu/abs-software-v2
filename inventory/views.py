@@ -6,7 +6,7 @@ from django.db.models import Sum
 from django.utils.dateparse import parse_date
 from .models import Inventory
 from .serializers import InventorySerializer
-from activity.utils import log_activity   # <-- import the logger
+from activity.utils import log_activity   # <-- import th
 from users.permissions import IsInventoryManager
 
 
