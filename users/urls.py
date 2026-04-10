@@ -1,7 +1,7 @@
 from django.urls import path
-
+from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
-    # User management
+    # User Management
     UserListCreateView,
     UserDetailView,
     UserUpdateView,
@@ -9,12 +9,14 @@ from .views import (
     UserStatsView,
     CurrentUserView,
     ActivateUserView,
+    CreateUserWithRoleView,
 
-    # Roles
+    # Roles & Assignment
     RoleListView,
     RoleCreateView,
-    UserRoleView,
-
+    GetUsersByRoleView,
+    AssignRoleView,
+    
     # Auth
     SignupView,
     LoginView,
@@ -22,62 +24,47 @@ from .views import (
     CustomTokenObtainPairView,
     LogoutView,
 
-    # Permissions & role assignment
+    # Permissions Logic (The "Bridge" for the Frontend)
     ListPermissionsByAppView,
-    UpdateGroupRoleView,
-    AssignRoleView,
+    UpdateGroupRoleView,  # Handles PUT /users/roles/${id}/update/
     UpdateRolesPermissionsView,
-    GetUsersByRoleView,
-    CreateUserWithRoleView, # ✅ add this import
     
-    # Employee management
+    # Employee
     EmployeeListCreateView, 
     EmployeeDetailView,
 )
 
-from rest_framework_simplejwt.views import TokenRefreshView
-
 urlpatterns = [
-    # User endpoints
+    # ─── Auth Endpoints ──────────────────────────────────────────
+    path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('signup/', SignupView.as_view(), name='signup'),
+    path('login/', LoginView.as_view(), name='login'),
+    path('register/', RegisterView.as_view(), name='register'),
+    path('logout/', LogoutView.as_view(), name='logout'),
+
+    # ─── User Profile & Management ────────────────────────────────
+    path('me/', CurrentUserView.as_view(), name='current-user'), # Requirement #1
     path('', UserListCreateView.as_view(), name='user-list-create'),
     path('<int:id>/', UserDetailView.as_view(), name='user-detail'),
     path('<int:id>/update/', UserUpdateView.as_view(), name='user-update'),
     path('<int:id>/delete/', UserDeleteView.as_view(), name='user-delete'),
     path('stats/', UserStatsView.as_view(), name='user-stats'),
-    path('me/', CurrentUserView.as_view(), name='current-user'),
     path('activate/<uidb64>/<token>/', ActivateUserView.as_view(), name='activate-user'),
+    path('create-with-role/', CreateUserWithRoleView.as_view(), name='create-user-with-role'),
 
-    # Role endpoints
+    # ─── Role & Permission Logic ──────────────────────────────────
     path('roles/', RoleListView.as_view(), name='role-list'),
     path('roles/create/', RoleCreateView.as_view(), name='role-create'),
-    path('roles/by-role/', GetUsersByRoleView.as_view(), name='users-by-role'),  # ✅ updated
-    path('<int:id>/role/', UserRoleView.as_view(), name='user-role'),
-
-    # Assign role directly via CustomUser.role
-    path('<int:id>/assign-role/', AssignRoleView.as_view(), name='assign-role'),
-
-    # Auth endpoints
-    path('signup/', SignupView.as_view(), name='signup'),
-    path('login/', LoginView.as_view(), name='login'),
-    path('register/', RegisterView.as_view(), name='register'),
-    path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('logout/', LogoutView.as_view(), name='logout'),
-
-    # Permissions & group role management
-    path('permissions/<str:app_label>/', ListPermissionsByAppView.as_view(), name='permissions-by-app'),
+    path('roles/by-role/', GetUsersByRoleView.as_view(), name='users-by-role'),
+    
+    # This matches the frontend's Requirement #2 & #3
     path('roles/<int:id>/update/', UpdateGroupRoleView.as_view(), name='update-role'),
+    path('permissions/<str:app_label>/', ListPermissionsByAppView.as_view(), name='permissions-by-app'),
+    path('<int:id>/assign-role/', AssignRoleView.as_view(), name='assign-role'),
     path('roles-permissions/', UpdateRolesPermissionsView.as_view(), name='update-roles-permissions'),
-    
-    # User creation with role assignment
-    path('create-with-role/', CreateUserWithRoleView.as_view(), name='create-user-with-role'),
-    
-    # Employee endpoints
+
+    # ─── Employee Management ──────────────────────────────────────
     path('employees/', EmployeeListCreateView.as_view(), name='employee-list-create'),
     path('employees/<int:id>/', EmployeeDetailView.as_view(), name='employee-detail'),
-    # other user-related routes...
-
-
-
-
 ]

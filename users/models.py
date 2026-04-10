@@ -1,6 +1,5 @@
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Group
 from django.db import models
-from django.contrib.auth.models import Group
 
 class CustomUser(AbstractUser):
     ROLE_CHOICES = (
@@ -19,8 +18,10 @@ class CustomUser(AbstractUser):
     name = models.CharField(max_length=255, blank=True, null=True)  
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    must_change_password = models.BooleanField(default=False, help_text="Designates whether the user must change their password upon next login.")
-
+    must_change_password = models.BooleanField(
+        default=False, 
+        help_text="Designates whether the user must change their password upon next login."
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
@@ -28,41 +29,50 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.email})"
 
-
     @property
     def role_label(self):
         """Return the human-readable label for the role integer."""
         return dict(self.ROLE_CHOICES).get(self.role)
+
+# ────────────────────────────────────────────────────────────────
+# RoleModulePermission: Refactored for Integer IDs
+# ────────────────────────────────────────────────────────────────
+
+class RoleModulePermission(models.Model):
+    # ✅ Changed from ForeignKey(Group) to IntegerField to match CustomUser.role
+    role_id = models.IntegerField() 
+    module = models.CharField(max_length=50) # e.g., 'inventory', 'safety'
     
-    
-    
-    
+    # ✅ Updated choices to lowercase to simplify frontend mapping
+    ACCESS_CHOICES = [
+        ('none', 'None'),
+        ('view', 'View'),
+        ('edit', 'Edit'),
+        ('full', 'Full'),
+    ]
+    access_level = models.CharField(max_length=10, choices=ACCESS_CHOICES, default='none')
+
+    class Meta:
+        # Prevents duplicate permission entries for the same role/module combo
+        unique_together = ('role_id', 'module')
+
+    def __str__(self):
+        role_name = dict(CustomUser.ROLE_CHOICES).get(self.role_id, f"Unknown Role {self.role_id}")
+        return f"{role_name} - {self.module}: {self.access_level}"
+
+
+# ────────────────────────────────────────────────────────────────
+# Other Models
+# ────────────────────────────────────────────────────────────────
 
 class Role(models.Model):
+    """Note: This model is now mostly used for metadata/descriptions since 
+    CustomUser uses the IntegerField 'role' for logic."""
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.name
-
-class RoleModulePermission(models.Model):
-    group = models.ForeignKey(Group, on_delete=models.CASCADE)
-    module = models.CharField(max_length=50)
-    access_level = models.CharField(max_length=10, choices=[
-        ('None', 'None'),
-        ('View', 'View'),
-        ('Edit', 'Edit'),
-        ('Full', 'Full'),
-    ])
-
-    class Meta:
-        unique_together = ('group', 'module')
-
-    def __str__(self):
-        return f"{self.group.name} - {self.module}: {self.access_level}"
-    
-    
-
 
 class Employee(models.Model):
     RANK_CHOICES = [
