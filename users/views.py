@@ -226,3 +226,14 @@ class EmployeeDetailView(generics.RetrieveUpdateDestroyAPIView):
     def perform_destroy(self, instance):
         log_activity(self.request.user, "users", "Employee", instance.id, "delete", f"Deleted employee: {instance.name}")
         instance.delete()
+        
+        
+        
+        
+class CurrentUserView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # We use the serializer we just built to ensure the role ID is sent
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
