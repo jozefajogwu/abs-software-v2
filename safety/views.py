@@ -1,34 +1,28 @@
-from django.shortcuts import render
-from rest_framework import viewsets
+from rest_framework import viewsets, generics
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from django.utils.timezone import now
 from datetime import timedelta
+from django.db.models import Count # Added for optimization
 
 from .models import SafetyIncident, RiskAssessment
 from .serializers import SafetyIncidentSerializer, RiskAssessmentSerializer
-from activity.utils import log_activity# <-- import logger
-
-
+from activity.utils import log_activity
 from rest_framework.views import APIView
-from users.permissions import IsSafetyOfficer
-
-
-def profile(request):
-    return render(request, "account/profile.html")
-
+from users.permissions import IsSafetyOfficer # ✅ Correctly imported
 
 # ────────────────────────────────────────────────────────────────
-# Safety Incident ViewSet with Stats Action + Activity Logging
+# Safety Incident ViewSet
 # ────────────────────────────────────────────────────────────────
 
 class SafetyIncidentViewSet(viewsets.ModelViewSet):
-    queryset = SafetyIncident.objects.all()
+    queryset = SafetyIncident.objects.all().order_by('-incident_date')
     serializer_class = SafetyIncidentSerializer
-    permission_classes = [IsAuthenticated]
+    # ✅ FIX: Requirement #2 - Lock down to Safety Officers only
+    permission_classes = [IsSafetyOfficer]
 
     def perform_create(self, serializer):
+        # Automatically set the reporter to the logged-in user
         incident = serializer.save(reported_by=self.request.user)
         log_activity(
             user=self.request.user,
@@ -63,28 +57,33 @@ class SafetyIncidentViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='stats')
     def stats(self, request):
-        total = SafetyIncident.objects.count()
         thirty_days_ago = now().date() - timedelta(days=30)
+        
+        # Optimized: Get status counts in one database hit
+        status_stats = SafetyIncident.objects.values('incident_status').annotate(total=Count('incident_status'))
+        status_map = {item['incident_status']: item['total'] for item in status_stats}
+        
+        total = SafetyIncident.objects.count()
         recent = SafetyIncident.objects.filter(incident_date__gte=thirty_days_ago).count()
-        resolved = SafetyIncident.objects.filter(incident_status="resolved").count()
-        investigating = SafetyIncident.objects.filter(incident_status="investigating").count()
 
         return Response({
             "total_incidents": total,
             "recent_incidents": recent,
-            "resolved_incidents": resolved,
-            "investigating_incidents": investigating
+            "resolved_incidents": status_map.get("resolved", 0),
+            "investigating_incidents": status_map.get("investigating", 0),
+            "open_incidents": status_map.get("open", 0) # Added to match your summary
         })
 
 
 # ────────────────────────────────────────────────────────────────
-# Risk Assessment ViewSet with Activity Logging
+# Risk Assessment ViewSet
 # ────────────────────────────────────────────────────────────────
 
 class RiskAssessmentViewSet(viewsets.ModelViewSet):
-    queryset = RiskAssessment.objects.all()
+    queryset = RiskAssessment.objects.all().order_by('-id')
     serializer_class = RiskAssessmentSerializer
-    permission_classes = [IsAuthenticated]
+    # ✅ FIX: Requirement #2 - Lock down
+    permission_classes = [IsSafetyOfficer]
 
     def perform_create(self, serializer):
         assessment = serializer.save()
@@ -119,21 +118,21 @@ class RiskAssessmentViewSet(viewsets.ModelViewSet):
         )
         instance.delete()
         
- # ────────────────────────────────────────────────────────────────
-# Feature: Safety Summary Endpoint (Only for Safety Officers)
+
 # ────────────────────────────────────────────────────────────────
+# Safety Summary Endpoint
+# ────────────────────────────────────────────────────────────────
+
 class SafetySummary(APIView):
     permission_classes = [IsSafetyOfficer]
 
     def get(self, request):
-        # Only safety officers can access this
-        total_incidents = SafetyIncident.objects.count()
-        open_incidents = SafetyIncident.objects.filter(status="open").count()
-        closed_incidents = SafetyIncident.objects.filter(status="closed").count()
+        # Optimized database hit
+        stats = SafetyIncident.objects.values('incident_status').annotate(total=Count('incident_status'))
+        status_map = {item['incident_status']: item['total'] for item in stats}
 
         return Response({
-            "total_incidents": total_incidents,
-            "open_incidents": open_incidents,
-            "closed_incidents": closed_incidents
+            "total_incidents": SafetyIncident.objects.count(),
+            "open_incidents": status_map.get("open", 0),
+            "closed_incidents": status_map.get("resolved", 0) # Resolved/Closed mapping
         })
-

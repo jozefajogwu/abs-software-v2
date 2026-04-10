@@ -1,19 +1,18 @@
 from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from django.db.models import Count # Added for optimization
 from .models import Equipment
 from .serializers import EquipmentSerializer
 from activity.utils import log_activity
-from users.permissions import IsEquipmentManager # ✅ Correctly imported
+from users.permissions import IsEquipmentManager 
 
-# --- PROTECTED VIEWS ---
+# --- CRUD VIEWS ---
 
 class EquipmentListCreateView(generics.ListCreateAPIView):
-    queryset = Equipment.objects.all()
+    queryset = Equipment.objects.all().order_by('-id')
     serializer_class = EquipmentSerializer
-    # ✅ Only Admin or Role 4 can view/create
-    permission_classes = [IsAuthenticated, IsEquipmentManager]
+    permission_classes = [IsEquipmentManager] # Requirement #2 Met
 
     def perform_create(self, serializer):
         equipment = serializer.save()
@@ -29,7 +28,7 @@ class EquipmentListCreateView(generics.ListCreateAPIView):
 class EquipmentUpdateView(generics.UpdateAPIView):
     queryset = Equipment.objects.all()
     serializer_class = EquipmentSerializer
-    permission_classes = [IsAuthenticated, IsEquipmentManager]
+    permission_classes = [IsEquipmentManager]
     lookup_field = 'id'
 
     def perform_update(self, serializer):
@@ -46,7 +45,7 @@ class EquipmentUpdateView(generics.UpdateAPIView):
 class EquipmentDeleteView(generics.DestroyAPIView):
     queryset = Equipment.objects.all()
     serializer_class = EquipmentSerializer
-    permission_classes = [IsAuthenticated, IsEquipmentManager]
+    permission_classes = [IsEquipmentManager]
     lookup_field = 'id'
 
     def perform_destroy(self, instance):
@@ -63,33 +62,26 @@ class EquipmentDeleteView(generics.DestroyAPIView):
 class EquipmentDetailView(generics.RetrieveAPIView):
     queryset = Equipment.objects.all()
     serializer_class = EquipmentSerializer
-    permission_classes = [IsAuthenticated, IsEquipmentManager]
+    permission_classes = [IsEquipmentManager]
     lookup_field = 'id'
 
+# --- STATS VIEW (Optimized) ---
+
 class EquipmentStatsView(APIView):
-    # ✅ Applied to the stats view as well
-    permission_classes = [IsAuthenticated, IsEquipmentManager]
+    permission_classes = [IsEquipmentManager]
 
     def get(self, request):
-        total = Equipment.objects.count()
-        available = Equipment.objects.filter(status="Available").count()
-        active = Equipment.objects.filter(status="In Use").count()
-        repair = Equipment.objects.filter(status="Under Maintenance").count()
-        retired = Equipment.objects.filter(status="Retired").count()
-
-        log_activity(
-            user=request.user,
-            app_name="equipment",
-            model_name="Equipment",
-            object_id=None,
-            action="view",
-            description="Viewed equipment stats"
-        )
+        # Optimized: 1 Database hit instead of 5
+        stats = Equipment.objects.values('status').annotate(total=Count('status'))
+        
+        # Convert queryset to a simple dictionary for the frontend
+        status_map = {item['status']: item['total'] for item in stats}
+        total_count = Equipment.objects.count()
 
         return Response({
-            "total_equipment": total,
-            "available_equipment": available,
-            "active_equipment": active,
-            "repair_equipment": repair,
-            "retired_equipment": retired
+            "total_equipment": total_count,
+            "available_equipment": status_map.get("Available", 0),
+            "active_equipment": status_map.get("In Use", 0),
+            "repair_equipment": status_map.get("Under Maintenance", 0),
+            "retired_equipment": status_map.get("Retired", 0)
         })

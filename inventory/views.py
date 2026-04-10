@@ -1,20 +1,18 @@
 from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from django.db.models import Sum
+from django.db.models import Sum, Count # Added Count
 from django.utils.dateparse import parse_date
 from .models import Inventory
 from .serializers import InventorySerializer
-from activity.utils import log_activity   # <-- import th
-from users.permissions import IsInventoryManager
-
-
+from activity.utils import log_activity 
+from users.permissions import IsInventoryManager # ✅ Imported
 
 # --- CRUD Endpoints ---
 class InventoryListCreateView(generics.ListCreateAPIView):
     serializer_class = InventorySerializer
-    permission_classes = [IsAuthenticated]
+    # ✅ FIX: Requirement #2 - Lock it to Inventory Managers only
+    permission_classes = [IsInventoryManager]
 
     def get_queryset(self):
         queryset = Inventory.objects.all().order_by('-created_at')
@@ -29,6 +27,7 @@ class InventoryListCreateView(generics.ListCreateAPIView):
         return queryset
 
     def perform_create(self, serializer):
+        # Ensure user is passed if your model requires it
         item = serializer.save(user=self.request.user)
         log_activity(
             user=self.request.user,
@@ -39,11 +38,11 @@ class InventoryListCreateView(generics.ListCreateAPIView):
             description=f"Added inventory item {item.item_name}"
         )
 
-
 class InventoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Inventory.objects.all()
     serializer_class = InventorySerializer
-    permission_classes = [IsAuthenticated]
+    # ✅ FIX: Requirement #2 - Lock it down
+    permission_classes = [IsInventoryManager]
     lookup_field = 'id'
 
     def perform_update(self, serializer):
@@ -68,10 +67,10 @@ class InventoryDetailView(generics.RetrieveUpdateDestroyAPIView):
         )
         instance.delete()
 
-
 # --- Summary Endpoint ---
 class InventorySummaryView(APIView):
-    permission_classes = [IsAuthenticated]
+    # ✅ FIX: Lock the summary to Inventory Managers
+    permission_classes = [IsInventoryManager]
 
     def get(self, request):
         start = request.query_params.get('start')
@@ -85,8 +84,6 @@ class InventorySummaryView(APIView):
                 queryset = queryset.filter(created_at__date__range=[start_date, end_date])
 
         total_stock = queryset.aggregate(total=Sum('quantity'))['total'] or 0
-
-        # Example: flag items with quantity < 10 as "low stock"
         low_stock_items = queryset.filter(quantity__lt=10)
         critical_items = queryset.filter(status='critical')
 
@@ -96,22 +93,20 @@ class InventorySummaryView(APIView):
             "critical_items": InventorySerializer(critical_items, many=True).data
         })
 
-
- # ────────────────────────────────────────────────────────────────
-# Feature: Inventory permission Endpoint (Only for Inventory Managers)
-# ────────────────────────────────────────────────────────────────
+# --- Status Endpoint (Optimized) ---
 class InventoryStatus(APIView):
     permission_classes = [IsInventoryManager]
 
     def get(self, request):
-        total = Inventory.objects.count()
-        status_counts = {
-            "good": Inventory.objects.filter(status='good').count(),
-            "average": Inventory.objects.filter(status='average').count(),
-            "critical": Inventory.objects.filter(status='critical').count(),
-        }
-
+        # Optimized: 1 Database hit to get all counts at once
+        stats = Inventory.objects.values('status').annotate(total=Count('status'))
+        status_map = {item['status']: item['total'] for item in stats}
+        
         return Response({
-            "total": total,
-            "status": status_counts
+            "total": Inventory.objects.count(),
+            "status": {
+                "good": status_map.get('good', 0),
+                "average": status_map.get('average', 0),
+                "critical": status_map.get('critical', 0),
+            }
         })

@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -8,10 +7,10 @@ from django.utils.dateparse import parse_date
 from .models import Operation, Maintenance, Production
 from .serializers import OperationSerializer, MaintenanceSerializer, ProductionSerializer
 from activity.utils import log_activity 
-
 from users.permissions import IsProductionManager, IsProjectManager
 
-PRODUCTION_PERMISSIONS = [IsProductionManager | IsProjectManager]
+# ✅ Fix: Proper OR syntax for permission classes
+PRODUCTION_PERMISSIONS = [(IsProductionManager | IsProjectManager)]
 
 # --- Operation endpoints ---
 class OperationListCreateView(generics.ListCreateAPIView):
@@ -39,14 +38,21 @@ class OperationDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = PRODUCTION_PERMISSIONS
     lookup_field = 'id'
 
-# --- Maintenance endpoints (MISSING CLASSES ADDED HERE) ---
+    def perform_update(self, serializer):
+        obj = serializer.save()
+        log_activity(user=self.request.user, app_name="production", model_name="Operation", object_id=obj.id, action="update", description=f"Updated operation record {obj.id}")
+
+    def perform_destroy(self, instance):
+        log_activity(user=self.request.user, app_name="production", model_name="Operation", object_id=instance.id, action="delete", description=f"Deleted operation record from {instance.date}")
+        instance.delete()
+
+# --- Maintenance endpoints ---
 class MaintenanceListCreateView(generics.ListCreateAPIView):
     serializer_class = MaintenanceSerializer
     permission_classes = PRODUCTION_PERMISSIONS
 
     def get_queryset(self):
-        queryset = Maintenance.objects.all().order_by('-date')
-        return queryset
+        return Maintenance.objects.all().order_by('-date')
 
     def perform_create(self, serializer):
         maintenance = serializer.save()
@@ -58,13 +64,17 @@ class MaintenanceDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = PRODUCTION_PERMISSIONS
     lookup_field = 'id'
 
-# --- Production endpoints (MISSING CLASSES ADDED HERE) ---
+# --- Production endpoints ---
 class ProductionListCreateView(generics.ListCreateAPIView):
     serializer_class = ProductionSerializer
     permission_classes = PRODUCTION_PERMISSIONS
 
     def get_queryset(self):
         return Production.objects.all().order_by('-date')
+
+    def perform_create(self, serializer):
+        prod = serializer.save()
+        log_activity(user=self.request.user, app_name="production", model_name="Production", object_id=prod.id, action="create", description=f"Created production entry for {prod.date}")
 
 class ProductionDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Production.objects.all()
@@ -77,12 +87,28 @@ class OperationSummaryView(APIView):
     permission_classes = PRODUCTION_PERMISSIONS
     def get(self, request):
         queryset = Operation.objects.all()
-        totals = queryset.aggregate(total_income=Sum('income'), total_expenditure=Sum('expenditure'), total_balance=Sum('balance'))
-        return Response({"total_income": totals['total_income'] or 0, "total_expenditure": totals['total_expenditure'] or 0, "total_balance": totals['total_balance'] or 0})
+        totals = queryset.aggregate(
+            total_income=Sum('income'), 
+            total_expenditure=Sum('expenditure'), 
+            total_balance=Sum('balance')
+        )
+        return Response({
+            "total_income": totals['total_income'] or 0, 
+            "total_expenditure": totals['total_expenditure'] or 0, 
+            "total_balance": totals['total_balance'] or 0
+        })
 
 class MaintenanceSummaryView(APIView):
     permission_classes = PRODUCTION_PERMISSIONS
     def get(self, request):
         queryset = Maintenance.objects.all()
-        totals = queryset.aggregate(total_income=Sum('income'), total_expenditure=Sum('expenditure'), total_balance=Sum('balance'))
-        return Response({"total_income": totals['total_income'] or 0, "total_expenditure": totals['total_expenditure'] or 0, "total_balance": totals['total_balance'] or 0})
+        totals = queryset.aggregate(
+            total_income=Sum('income'), 
+            total_expenditure=Sum('expenditure'), 
+            total_balance=Sum('balance')
+        )
+        return Response({
+            "total_income": totals['total_income'] or 0, 
+            "total_expenditure": totals['total_expenditure'] or 0, 
+            "total_balance": totals['total_balance'] or 0
+        })
