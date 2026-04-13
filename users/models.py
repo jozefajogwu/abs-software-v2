@@ -54,13 +54,14 @@ class RoleModulePermission(models.Model):
 
     class Meta:
         # Prevents duplicate permission entries for the same role/module combo
-        unique_together = ('role_id', 'module')
+        unique_together = ('role_id', 'module') # 👈 COMMENTED OUT TEMPORARILY
+        pass
 
     def __str__(self):
+        # Importing here to avoid circular import if necessary
+        from .models import CustomUser 
         role_name = dict(CustomUser.ROLE_CHOICES).get(self.role_id, f"Unknown Role {self.role_id}")
         return f"{role_name} - {self.module}: {self.access_level}"
-
-
 # ────────────────────────────────────────────────────────────────
 # Other Models
 # ────────────────────────────────────────────────────────────────
