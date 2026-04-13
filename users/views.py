@@ -1,9 +1,8 @@
 import random
 from django.contrib.auth import authenticate, get_user_model, login
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.utils.http import urlsafe_base64_decode
+from django.db import transaction # ✅ Added for Supabase transaction stability
 from django.shortcuts import get_object_or_404
-from django.db.models import Count # ✅ Needed for UserStatsView
+from django.db.models import Count
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -20,7 +19,6 @@ from .serializers import (
 from users.utils import generate_activation_link, send_resend_email
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
-
 from activity.utils import log_activity
 
 User = get_user_model()
@@ -134,7 +132,7 @@ class CreateUserWithRoleView(generics.CreateAPIView):
     serializer_class = UserSerializer
     permission_classes = [IsAdminUser]
 
-# ─── ROLE & PERMISSION LOGIC ──────────────────────────────────
+# ─── ROLE & PERMISSION LOGIC (REFACTORED) ──────────────────────
 
 class RoleListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -158,8 +156,10 @@ class AssignRoleView(APIView):
     def put(self, request, id):
         user = get_object_or_404(CustomUser, id=id)
         role = request.data.get("role")
-        user.role = int(role)
-        user.save()
+        with transaction.atomic(): # ✅ Ensure role save commits to Supabase
+            user.role = int(role)
+            user.save()
+        log_activity(request.user, "users", "CustomUser", user.id, "update", f"Assigned role {role} to {user.username}")
         return Response({"detail": "Role assigned"})
 
 class GetUsersByRoleView(APIView):
@@ -175,17 +175,23 @@ class ListPermissionsByAppView(APIView):
         perms = Permission.objects.filter(content_type__app_label=app_label)
         return Response([{"id": p.id, "codename": p.codename, "name": p.name} for p in perms])
 
-class UpdateGroupRoleView(APIView):
+class UpdateRolePermissionsView(APIView): # ✅ Renamed from UpdateGroupRoleView
     permission_classes = [IsAdminUser]
     def put(self, request, id):
         role_id = int(id)
         permissions_data = request.data.get("permissions", [])
-        for perm in permissions_data:
-            RoleModulePermission.objects.update_or_create(
-                role_id=role_id, module=perm.get('module'),
-                defaults={'access_level': perm.get('access_level')}
-            )
-        return Response({"detail": "Permissions updated"})
+        
+        try:
+            with transaction.atomic(): # ✅ Critical for Supabase
+                for perm in permissions_data:
+                    RoleModulePermission.objects.update_or_create(
+                        role_id=role_id, 
+                        module=perm.get('module'),
+                        defaults={'access_level': perm.get('access_level')}
+                    )
+            return Response({"detail": "Permissions updated successfully"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class UpdateRolesPermissionsView(APIView):
     permission_classes = [IsAdminUser]

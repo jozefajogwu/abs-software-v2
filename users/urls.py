@@ -21,13 +21,15 @@ from .views import (
     SignupView,
     LoginView,
     RegisterView,
+    CustomTokenObtainPairSerializer, # Usually used in the view, but keeping for consistency
     CustomTokenObtainPairView,
     LogoutView,
 
-    # Permissions Logic (The "Bridge" for the Frontend)
+    # Permissions Logic (Refactored to Integer IDs)
     ListPermissionsByAppView,
-    UpdateGroupRoleView,  # Handles PUT /users/roles/${id}/update/
+    UpdateRolePermissionsView,  # ✅ Renamed from UpdateGroupRoleView
     UpdateRolesPermissionsView,
+    SystemPermissionsListView,  # ✅ Added this missing import
     
     # Employee
     EmployeeListCreateView, 
@@ -44,7 +46,7 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
 
     # ─── User Profile & Management ────────────────────────────────
-    path('me/', CurrentUserView.as_view(), name='current-user'), # Requirement #1
+    path('me/', CurrentUserView.as_view(), name='current-user'),
     path('', UserListCreateView.as_view(), name='user-list-create'),
     path('<int:id>/', UserDetailView.as_view(), name='user-detail'),
     path('<int:id>/update/', UserUpdateView.as_view(), name='user-update'),
@@ -58,9 +60,11 @@ urlpatterns = [
     path('roles/create/', RoleCreateView.as_view(), name='role-create'),
     path('roles/by-role/', GetUsersByRoleView.as_view(), name='users-by-role'),
     
-    # This matches the frontend's Requirement #2 & #3
-    path('roles/<int:id>/update/', UpdateGroupRoleView.as_view(), name='update-role'),
+    # ✅ Fixed: Now uses UpdateRolePermissionsView (No more Group 404 error)
+    path('roles/<int:id>/update/', UpdateRolePermissionsView.as_view(), name='update-role'),
+    
     path('permissions/<str:app_label>/', ListPermissionsByAppView.as_view(), name='permissions-by-app'),
+    path('system-permissions/', SystemPermissionsListView.as_view(), name='system-permissions'), # Added for completeness
     path('<int:id>/assign-role/', AssignRoleView.as_view(), name='assign-role'),
     path('roles-permissions/', UpdateRolesPermissionsView.as_view(), name='update-roles-permissions'),
 
