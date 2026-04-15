@@ -15,6 +15,7 @@ from .serializers import (
     UserSerializer,
     RegisterSerializer,
     CustomTokenObtainPairSerializer,
+    RoleSerializer,  # ✅ Added for role permission lookup
 )
 from users.utils import generate_activation_link, send_resend_email
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -137,8 +138,10 @@ class CreateUserWithRoleView(generics.CreateAPIView):
 class RoleListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def get(self, request):
-        roles = [{"id": k, "key": k, "label": v} for k, v in CustomUser.ROLE_CHOICES]
-        return Response(roles)
+        # ✅ Updated to use RoleSerializer to fetch saved permissions from the DB
+        roles_data = [{"id": k, "label": v} for k, v in CustomUser.ROLE_CHOICES]
+        serializer = RoleSerializer(roles_data, many=True)
+        return Response(serializer.data)
 
 class RoleCreateView(APIView):
     permission_classes = [IsAdminUser]
