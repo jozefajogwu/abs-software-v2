@@ -11,33 +11,66 @@ from .models import CustomUser, Employee, RoleModulePermission
 User = get_user_model()
 
 # ────────────────────────────────────────────────────────────────
-# Role Permission Serializer (New: For the "Feed")
+# Utility Utilities
 # ────────────────────────────────────────────────────────────────
 
+def generate_random_password(length=12):
+    """Generates a secure, random password for admin-created users."""
+    characters = string.ascii_letters + string.digits + '@$!%*?&'
+    return ''.join(secrets.choice(characters) for _ in range(length))
+
+
+# ────────────────────────────────────────────────────────────────
+# Role & Permission Serializers
+# ────────────────────────────────────────────────────────────────
+
+class PermissionSerializer(serializers.ModelSerializer):
+    """Returns basic Django permission details."""
+    class Meta:
+        model = Permission
+        fields = ['id', 'codename', 'name']
+
+
 class RolePermissionSerializer(serializers.ModelSerializer):
-    """Returns module-specific access levels for a role."""
+    """Returns module-specific access levels for a role from our custom table."""
     class Meta:
         model = RoleModulePermission
         fields = ['module', 'access_level']
 
 
+class RoleSerializer(serializers.Serializer):
+    """
+    Used for the GET /api/users/roles/ endpoint.
+    Combines static ROLE_CHOICES with saved database permissions.
+    """
+    id = serializers.IntegerField()
+    label = serializers.CharField()
+    permissions = serializers.SerializerMethodField()
+
+    def get_permissions(self, obj):
+        # Handles both dicts (from views) and model instances
+        role_id = obj.get('id') if isinstance(obj, dict) else obj.id
+        perms = RoleModulePermission.objects.filter(role_id=role_id)
+        return RolePermissionSerializer(perms, many=True).data
+
+
 # ────────────────────────────────────────────────────────────────
-# User Serializer (Requirement 1: Accurate User Object)
+# User Serializer (The "Main Feed")
 # ────────────────────────────────────────────────────────────────
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
     profile_image = serializers.ImageField(required=False, allow_null=True)
     role_label = serializers.SerializerMethodField()
-    permissions = serializers.SerializerMethodField() # 👈 Added permissions feed
+    permissions = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
         fields = [
             'id', 'username', 'email', 'phone_number', 'role', 'role_label', 
-            'department', 'is_active', 'is_superuser', 'is_staff', # 👈 Added superuser/staff
+            'department', 'is_active', 'is_superuser', 'is_staff', 
             'created_at', 'password', 'must_change_password', 
-            'profile_image', 'permissions' # 👈 Added permissions to fields
+            'profile_image', 'permissions'
         ]
         read_only_fields = ['is_active', 'created_at', 'must_change_password']
 
@@ -81,19 +114,35 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 # ────────────────────────────────────────────────────────────────
-# Auth & Token Serializers (Requirement 1: Dynamic Role mapping)
+# Auth & Token Serializers
 # ────────────────────────────────────────────────────────────────
+
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'username', 'email', 'phone_number', 'department', 'role', 'password']
+
+    def create(self, validated_data):
+        password = validated_data.pop('password')
+        user = CustomUser(**validated_data)
+        user.set_password(password)
+        user.must_change_password = False
+        user.save()
+        return user
+
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
     Customizes the JWT response to include the full User object.
-    This ensures Na'thanuel gets the superuser flag immediately on login.
+    Ensures 'is_superuser' and 'permissions' are sent immediately on login.
     """
     def validate(self, attrs):
         data = super().validate(attrs)
         user = self.user 
         
-        # We fetch permissions here too for the immediate login response
+        # Fetch permissions for the immediate login response
         perms = RoleModulePermission.objects.filter(role_id=user.role)
         permissions_data = RolePermissionSerializer(perms, many=True).data
 
@@ -103,8 +152,18 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             "email": user.email,
             "role": user.role,
             "role_label": dict(CustomUser.ROLE_CHOICES).get(user.role, "Unknown"),
-            "is_superuser": user.is_superuser, # 👈 Critical for his frontend
+            "is_superuser": user.is_superuser,
             "is_staff": user.is_staff,
-            "permissions": permissions_data # 👈 The "Everything" feed
+            "permissions": permissions_data
         }
         return data
+
+
+# ────────────────────────────────────────────────────────────────
+# Employee Serializer
+# ────────────────────────────────────────────────────────────────
+
+class EmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Employee
+        fields = '__all__'
