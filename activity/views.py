@@ -1,13 +1,14 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from .models import RecentActivity
-from .serializers import RecentActivitySerializer
+from rest_framework import generics
+from .models import ActivityLog
+from .serializers import ActivityLogSerializer
 
-class RecentActivityView(APIView):
-    permission_classes = [IsAuthenticated]
+class RecentActivityView(generics.ListAPIView):
+    """Main Dashboard: Only Mutations"""
+    serializer_class = ActivityLogSerializer
+    def get_queryset(self):
+        return ActivityLog.objects.filter(is_mutation=True)[:20]
 
-    def get(self, request):
-        logs = RecentActivity.objects.all()[:20]  # latest 20 entries
-        serializer = RecentActivitySerializer(logs, many=True)
-        return Response(serializer.data)
+class AuditLogView(generics.ListAPIView):
+    """Full Audit Log: Everything (GETs, Views, etc.)"""
+    serializer_class = ActivityLogSerializer
+    queryset = ActivityLog.objects.all()

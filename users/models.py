@@ -35,15 +35,14 @@ class CustomUser(AbstractUser):
         return dict(self.ROLE_CHOICES).get(self.role)
 
 # ────────────────────────────────────────────────────────────────
-# RoleModulePermission: Refactored for Integer IDs
+# RoleModulePermission: Fixed for Multi-Role Persistence
 # ────────────────────────────────────────────────────────────────
 
 class RoleModulePermission(models.Model):
-    # ✅ Changed from ForeignKey(Group) to IntegerField to match CustomUser.role
+    # Matches CustomUser.role integer IDs
     role_id = models.IntegerField() 
     module = models.CharField(max_length=50) # e.g., 'inventory', 'safety'
     
-    # ✅ Updated choices to lowercase to simplify frontend mapping
     ACCESS_CHOICES = [
         ('none', 'None'),
         ('view', 'View'),
@@ -53,22 +52,21 @@ class RoleModulePermission(models.Model):
     access_level = models.CharField(max_length=10, choices=ACCESS_CHOICES, default='none')
 
     class Meta:
-        # Prevents duplicate permission entries for the same role/module combo
-        unique_together = ('role_id', 'module') # 👈 COMMENTED OUT TEMPORARILY
-        pass
+        # ✅ Re-enabled and strictly enforced:
+        # This allows "inventory" for Role 0 AND "inventory" for Role 1.
+        # It prevents a single role from having duplicate module entries.
+        unique_together = ('role_id', 'module')
 
     def __str__(self):
-        # Importing here to avoid circular import if necessary
-        from .models import CustomUser 
+        # Human readable string for Admin panel
         role_name = dict(CustomUser.ROLE_CHOICES).get(self.role_id, f"Unknown Role {self.role_id}")
         return f"{role_name} - {self.module}: {self.access_level}"
+
 # ────────────────────────────────────────────────────────────────
 # Other Models
 # ────────────────────────────────────────────────────────────────
 
 class Role(models.Model):
-    """Note: This model is now mostly used for metadata/descriptions since 
-    CustomUser uses the IntegerField 'role' for logic."""
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, null=True)
 
