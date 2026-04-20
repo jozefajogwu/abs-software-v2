@@ -178,41 +178,51 @@ class ListPermissionsByAppView(APIView):
         perms = Permission.objects.filter(content_type__app_label=app_label)
         return Response([{"id": p.id, "codename": p.codename, "name": p.name} for p in perms])
 
-class UpdateRolePermissionsView(APIView): # ✅ Renamed from UpdateGroupRoleView
+class UpdateRolePermissionsView(APIView):
     permission_classes = [IsAdminUser]
+
     def put(self, request, id):
         role_id = int(id)
+        # Na'thanuel is sending the array under the key "permissions"
         permissions_data = request.data.get("permissions", [])
         
+        if not permissions_data:
+            return Response({"detail": "No permissions provided"}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            with transaction.atomic(): # ✅ Critical for Supabase
+            with transaction.atomic():  # ✅ Ensures all 48 items save or none do
                 for perm in permissions_data:
+                    # We extract 'permission' from his JSON to use as our permission_id
+                    p_id = perm.get('permission')
+                    module_name = perm.get('module')
+                    
                     RoleModulePermission.objects.update_or_create(
                         role_id=role_id, 
-                        module=perm.get('module'),
-                        defaults={'access_level': perm.get('access_level')}
+                        module=module_name,
+                        permission_id=p_id, # 👈 Now distinct rows per permission ID
+                        defaults={
+                            'access_level': str(perm.get('access_level'))
+                        }
                     )
-            return Response({"detail": "Permissions updated successfully"}, status=status.HTTP_200_OK)
+            
+            # Log the successful bulk update
+            log_activity(
+                request.user, 
+                "users", 
+                "RoleModulePermission", 
+                None, 
+                "update", 
+                f"Updated {len(permissions_data)} permissions for Role ID {role_id}"
+            )
+            
+            return Response({
+                "detail": f"Successfully updated {len(permissions_data)} permissions"
+            }, status=status.HTTP_200_OK)
+
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-class UpdateRolesPermissionsView(APIView):
-    permission_classes = [IsAdminUser]
-    def post(self, request):
-        return Response({"detail": "Bulk permissions updated"})
-
-class SystemPermissionsListView(APIView):
-    permission_classes = [IsAdminUser]
-    def get(self, request):
-        apps = ['inventory', 'production', 'safety', 'equipment', 'users']
-        perms = Permission.objects.filter(content_type__app_label__in=apps)
-        data = {}
-        for p in perms:
-            app = p.content_type.app_label
-            if app not in data: data[app] = []
-            data[app].append({"id": p.id, "name": p.name, "codename": p.codename})
-        return Response(data)
-
+        
+        
 # ─── EMPLOYEE VIEWS ───────────────────────────────────────────
 
 class EmployeeListCreateView(generics.ListCreateAPIView):

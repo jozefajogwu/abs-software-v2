@@ -35,32 +35,29 @@ class CustomUser(AbstractUser):
         return dict(self.ROLE_CHOICES).get(self.role)
 
 # ────────────────────────────────────────────────────────────────
-# RoleModulePermission: Fixed for Multi-Role Persistence
+# RoleModulePermission: Refactored for Multi-Item Persistence
 # ────────────────────────────────────────────────────────────────
 
 class RoleModulePermission(models.Model):
     # Matches CustomUser.role integer IDs
     role_id = models.IntegerField() 
-    module = models.CharField(max_length=50) # e.g., 'inventory', 'safety'
+    module = models.CharField(max_length=50) # e.g., 'inventory', 'users'
     
-    ACCESS_CHOICES = [
-        ('none', 'None'),
-        ('view', 'View'),
-        ('edit', 'Edit'),
-        ('full', 'Full'),
-    ]
-    access_level = models.CharField(max_length=10, choices=ACCESS_CHOICES, default='none')
+    # ✅ Added permission_id to capture the specific ID sent by frontend
+    permission_id = models.IntegerField(null=True, blank=True) 
+
+    # Increased max_length to accommodate integer strings if sent that way
+    access_level = models.CharField(max_length=50, default='none')
 
     class Meta:
-        # ✅ Re-enabled and strictly enforced:
-        # This allows "inventory" for Role 0 AND "inventory" for Role 1.
-        # It prevents a single role from having duplicate module entries.
-        unique_together = ('role_id', 'module')
+        # ✅ NEW CONSTRAINT:
+        # This allows multiple "users" entries for Role 0, 
+        # as long as each has a different permission_id.
+        unique_together = ('role_id', 'module', 'permission_id')
 
     def __str__(self):
-        # Human readable string for Admin panel
         role_name = dict(CustomUser.ROLE_CHOICES).get(self.role_id, f"Unknown Role {self.role_id}")
-        return f"{role_name} - {self.module}: {self.access_level}"
+        return f"{role_name} - {self.module} (ID: {self.permission_id})"
 
 # ────────────────────────────────────────────────────────────────
 # Other Models
