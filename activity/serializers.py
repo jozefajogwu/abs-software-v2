@@ -1,11 +1,11 @@
 from rest_framework import serializers
-from .models import RecentActivity
+from .models import ActivityLog
 
-class RecentActivitySerializer(serializers.ModelSerializer):
+class ActivityLogSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()  # shows username instead of user ID
 
     class Meta:
-        model = RecentActivity
+        model = ActivityLog
         fields = [
             'id',
             'user',

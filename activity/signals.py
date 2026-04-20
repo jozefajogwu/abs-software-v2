@@ -18,7 +18,7 @@ def log_project_save(sender, instance, created, raw=False, **kwargs):
     if raw:
         return
     action = "create" if created else "update"
-    RecentActivity.objects.create(
+    ActivityLog.objects.create(
         user=getattr(instance, "owner", None),
         app_name="projects",
         model_name="Project",
@@ -29,7 +29,7 @@ def log_project_save(sender, instance, created, raw=False, **kwargs):
 
 @receiver(post_delete, sender=Project)
 def log_project_delete(sender, instance, **kwargs):
-    RecentActivity.objects.create(
+    ActivityLog.objects.create(
         user=getattr(instance, "owner", None),
         app_name="projects",
         model_name="Project",
@@ -45,7 +45,7 @@ def log_equipment_save(sender, instance, created, raw=False, **kwargs):
     if raw:
         return
     action = "create" if created else "update"
-    RecentActivity.objects.create(
+    ActivityLog.objects.create(
         user=getattr(instance, "assigned_to", None),
         app_name="equipment",
         model_name="Equipment",
@@ -56,7 +56,7 @@ def log_equipment_save(sender, instance, created, raw=False, **kwargs):
 
 @receiver(post_delete, sender=Equipment)
 def log_equipment_delete(sender, instance, **kwargs):
-    RecentActivity.objects.create(
+    ActivityLog.objects.create(
         user=getattr(instance, "assigned_to", None),
         app_name="equipment",
         model_name="Equipment",
@@ -72,7 +72,7 @@ def log_incident_save(sender, instance, created, raw=False, **kwargs):
     if raw:
         return
     action = "create" if created else "update"
-    RecentActivity.objects.create(
+    ActivityLog.objects.create(
         user=getattr(instance, "reported_by", None),
         app_name="safety",
         model_name="SafetyIncident",
@@ -83,7 +83,7 @@ def log_incident_save(sender, instance, created, raw=False, **kwargs):
 
 @receiver(post_delete, sender=SafetyIncident)
 def log_incident_delete(sender, instance, **kwargs):
-    RecentActivity.objects.create(
+    ActivityLog.objects.create(
         user=getattr(instance, "reported_by", None),
         app_name="safety",
         model_name="SafetyIncident",
@@ -99,7 +99,7 @@ def log_inventory_save(sender, instance, created, raw=False, **kwargs):
     if raw:
         return
     action = "create" if created else "update"
-    RecentActivity.objects.create(
+    ActivityLog.objects.create(
         user=getattr(instance, "updated_by", None),
         app_name="inventory",
         model_name="Inventory",
@@ -110,7 +110,7 @@ def log_inventory_save(sender, instance, created, raw=False, **kwargs):
 
 @receiver(post_delete, sender=Inventory)
 def log_inventory_delete(sender, instance, **kwargs):
-    RecentActivity.objects.create(
+    ActivityLog.objects.create(
         user=getattr(instance, "updated_by", None),
         app_name="inventory",
         model_name="Inventory",
@@ -126,7 +126,7 @@ def log_operation_save(sender, instance, created, raw=False, **kwargs):
     if raw:
         return
     action = "create" if created else "update"
-    RecentActivity.objects.create(
+    ActivityLog.objects.create(
         user=getattr(instance, "performed_by", None),
         app_name="operations",
         model_name="OperationRecord",
@@ -137,7 +137,7 @@ def log_operation_save(sender, instance, created, raw=False, **kwargs):
 
 @receiver(post_delete, sender=OperationRecord)
 def log_operation_delete(sender, instance, **kwargs):
-    RecentActivity.objects.create(
+    ActivityLog.objects.create(
         user=getattr(instance, "performed_by", None),
         app_name="operations",
         model_name="OperationRecord",
@@ -152,7 +152,7 @@ def log_maintenance_save(sender, instance, created, raw=False, **kwargs):
     if raw:
         return
     action = "create" if created else "update"
-    RecentActivity.objects.create(
+    ActivityLog.objects.create(
         user=getattr(instance, "performed_by", None),
         app_name="operations",
         model_name="MaintenanceRecord",
@@ -163,7 +163,7 @@ def log_maintenance_save(sender, instance, created, raw=False, **kwargs):
 
 @receiver(post_delete, sender=MaintenanceRecord)
 def log_maintenance_delete(sender, instance, **kwargs):
-    RecentActivity.objects.create(
+    ActivityLog.objects.create(
         user=getattr(instance, "performed_by", None),
         app_name="operations",
         model_name="MaintenanceRecord",

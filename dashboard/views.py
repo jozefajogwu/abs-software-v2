@@ -20,7 +20,7 @@ from transaction.models import Transaction
 from rest_framework.permissions import IsAuthenticated
 from .serializers import TransactionSerializer
         
-from activity.models import RecentActivity
+from activity.models import ActivityLog
 
 
 
@@ -120,7 +120,7 @@ class RecentActivityFeed(APIView):
 
     def get(self, request):
         app_filter = request.query_params.get("app_name")
-        logs = RecentActivity.objects.select_related("user").order_by("-created_at")[:20]
+        logs = ActivityLog.objects.select_related("user").order_by("-created_at")[:20]
 
         if app_filter:
             logs = logs.filter(app_name=app_filter)
