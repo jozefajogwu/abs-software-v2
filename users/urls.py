@@ -28,8 +28,8 @@ from .views import (
     # Permissions Logic (Refactored to Integer IDs)
     ListPermissionsByAppView,
     UpdateRolePermissionsView,  # ✅ Renamed from UpdateGroupRoleView
-    # UpdateRolesPermissionsView,
-    # SystemPermissionsListView,  # ✅ Added this missing import
+    UpdateRolesPermissionsView,
+    SystemPermissionsListView,  # ✅ Added this missing import
     
     # Employee
     EmployeeListCreateView, 
@@ -64,9 +64,9 @@ urlpatterns = [
     path('roles/<int:id>/update/', UpdateRolePermissionsView.as_view(), name='update-role'),
     
     path('permissions/<str:app_label>/', ListPermissionsByAppView.as_view(), name='permissions-by-app'),
-    # path('system-permissions/', SystemPermissionsListView.as_view(), name='system-permissions'), # Added for completeness
+    path('system-permissions/', SystemPermissionsListView.as_view(), name='system-permissions'), # Added for completeness
     path('<int:id>/assign-role/', AssignRoleView.as_view(), name='assign-role'),
-    # path('roles-permissions/', UpdateRolesPermissionsView.as_view(), name='update-roles-permissions'),
+    path('roles-permissions/', UpdateRolesPermissionsView.as_view(), name='update-roles-permissions'),
 
     # ─── Employee Management ──────────────────────────────────────
     path('employees/', EmployeeListCreateView.as_view(), name='employee-list-create'),

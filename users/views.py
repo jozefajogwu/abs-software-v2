@@ -235,3 +235,77 @@ class EmployeeDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = EmployeeSerializer
     lookup_field = 'id'
     permission_classes = [permissions.IsAuthenticated]
+
+class SystemPermissionsListView(APIView):
+    """
+    Returns a unified list of all discrete system permissions.
+    """
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        perms = Permission.objects.select_related('content_type').all()
+        return Response([
+            {
+                "id": p.id, 
+                "codename": p.codename, 
+                "name": p.name, 
+                "app_label": p.content_type.app_label,
+                "model": p.content_type.model
+            } 
+            for p in perms
+        ], status=status.HTTP_200_OK)
+
+class UpdateRolesPermissionsView(APIView):
+    """
+    Bulk manages permissions across multiple roles at once.
+    """
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        perms = RoleModulePermission.objects.all()
+        return Response([
+            {
+                "id": p.id,
+                "role_id": p.role_id,
+                "module": p.module,
+                "permission_id": p.permission_id,
+                "access_level": p.access_level
+            }
+            for p in perms
+        ], status=status.HTTP_200_OK)
+
+    def put(self, request):
+        payload = request.data
+        if not isinstance(payload, list):
+            return Response({"detail": "Expected a list of role updates."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            with transaction.atomic():
+                for role_data in payload:
+                    role_id = role_data.get("role_id")
+                    permissions_data = role_data.get("permissions", [])
+                    
+                    if role_id is None:
+                        continue
+                        
+                    for perm in permissions_data:
+                        RoleModulePermission.objects.update_or_create(
+                            role_id=role_id, 
+                            module=perm.get('module'),
+                            permission_id=perm.get('permission'),  # Distinct rows per ID
+                            defaults={
+                                'access_level': str(perm.get('access_level', 'none'))
+                            }
+                        )
+            
+            log_activity(
+                request.user, 
+                "users", 
+                "RoleModulePermission", 
+                None, 
+                "update", 
+                f"Bulk updated permissions for {len(payload)} roles"
+            )
+            return Response({"detail": "Bulk roles permissions updated successfully"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
