@@ -122,11 +122,13 @@ WSGI_APPLICATION = "abv_management.wsgi.application"
 
 # ─── DATABASE CONFIGURATION ──────────────────────────────────
 # Using config() is safer than parse() as it handles type casting better.
+
+
 DATABASES = {
-    "default": dj_database_url.config(
-        default=os.getenv("SUPABASE_DB_URL"),
+    'default': dj_database_url.config(
+        default=os.getenv('DATABASE_URL'),
         conn_max_age=600,
-        ssl_require=True,
+        ssl_require=True # ✅ Crucial for Supabase
     )
 }
 

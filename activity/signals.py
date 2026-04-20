@@ -1,6 +1,6 @@
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from activity.models import RecentActivity
+from activity.models import ActivityLog
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
