@@ -13,7 +13,7 @@ from .views import (
 
     # Roles & Assignment
     RoleListView,
-    RoleDetailView,  # ✅ Added this import
+    RoleDetailView,  # ✅ Import verified
     RoleCreateView,
     GetUsersByRoleView,
     AssignRoleView,
@@ -25,7 +25,7 @@ from .views import (
     CustomTokenObtainPairView,
     LogoutView,
 
-    # Permissions Logic (Refactored to Integer IDs)
+    # Permissions Logic
     ListPermissionsByAppView,
     UpdateRolePermissionsView,
     UpdateRolesPermissionsView,
@@ -58,13 +58,13 @@ urlpatterns = [
     # ─── Role & Permission Logic ──────────────────────────────────
     path('roles/', RoleListView.as_view(), name='role-list'),
     
-    # ✅ Added: This handles GET /api/users/roles/0/ and prevents the 404
+    # ✅ Fixed: Resolves 404 error on verification GET
     path('roles/<int:id>/', RoleDetailView.as_view(), name='role-detail'),
     
     path('roles/create/', RoleCreateView.as_view(), name='role-create'),
     path('roles/by-role/', GetUsersByRoleView.as_view(), name='users-by-role'),
     
-    # This handles PUT /api/users/roles/0/update/
+    # PUT route for saving permissions
     path('roles/<int:id>/update/', UpdateRolePermissionsView.as_view(), name='update-role'),
     
     path('permissions/<str:app_label>/', ListPermissionsByAppView.as_view(), name='permissions-by-app'),
