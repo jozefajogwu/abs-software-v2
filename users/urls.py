@@ -13,6 +13,7 @@ from .views import (
 
     # Roles & Assignment
     RoleListView,
+    RoleDetailView,  # ✅ Added this import
     RoleCreateView,
     GetUsersByRoleView,
     AssignRoleView,
@@ -21,15 +22,14 @@ from .views import (
     SignupView,
     LoginView,
     RegisterView,
-    CustomTokenObtainPairSerializer, # Usually used in the view, but keeping for consistency
     CustomTokenObtainPairView,
     LogoutView,
 
     # Permissions Logic (Refactored to Integer IDs)
     ListPermissionsByAppView,
-    UpdateRolePermissionsView,  # ✅ Renamed from UpdateGroupRoleView
+    UpdateRolePermissionsView,
     UpdateRolesPermissionsView,
-    SystemPermissionsListView,  # ✅ Added this missing import
+    SystemPermissionsListView,
     
     # Employee
     EmployeeListCreateView, 
@@ -57,14 +57,18 @@ urlpatterns = [
 
     # ─── Role & Permission Logic ──────────────────────────────────
     path('roles/', RoleListView.as_view(), name='role-list'),
+    
+    # ✅ Added: This handles GET /api/users/roles/0/ and prevents the 404
+    path('roles/<int:id>/', RoleDetailView.as_view(), name='role-detail'),
+    
     path('roles/create/', RoleCreateView.as_view(), name='role-create'),
     path('roles/by-role/', GetUsersByRoleView.as_view(), name='users-by-role'),
     
-    # ✅ Fixed: Now uses UpdateRolePermissionsView (No more Group 404 error)
+    # This handles PUT /api/users/roles/0/update/
     path('roles/<int:id>/update/', UpdateRolePermissionsView.as_view(), name='update-role'),
     
     path('permissions/<str:app_label>/', ListPermissionsByAppView.as_view(), name='permissions-by-app'),
-    path('system-permissions/', SystemPermissionsListView.as_view(), name='system-permissions'), # Added for completeness
+    path('system-permissions/', SystemPermissionsListView.as_view(), name='system-permissions'),
     path('<int:id>/assign-role/', AssignRoleView.as_view(), name='assign-role'),
     path('roles-permissions/', UpdateRolesPermissionsView.as_view(), name='update-roles-permissions'),
 

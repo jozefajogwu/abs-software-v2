@@ -32,10 +32,15 @@ class PermissionSerializer(serializers.ModelSerializer):
 
 
 class RolePermissionSerializer(serializers.ModelSerializer):
-    """Returns module-specific access levels for a role from our custom table."""
+    """
+    Returns module-specific access levels.
+    Maps permission_id to 'permission' to match Na'thanuel's frontend payload.
+    """
+    permission = serializers.IntegerField(source='permission_id', allow_null=True)
+
     class Meta:
         model = RoleModulePermission
-        fields = ['module', 'access_level']
+        fields = ['module', 'access_level', 'permission']
 
 
 class RoleSerializer(serializers.Serializer):
@@ -81,7 +86,7 @@ class UserSerializer(serializers.ModelSerializer):
         return "No Role Assigned"
 
     def get_permissions(self, obj):
-        """Feeds the list of module permissions tied to the user's role integer."""
+        """Feeds the full list of permissions tied to the user's role integer."""
         perms = RoleModulePermission.objects.filter(role_id=obj.role)
         return RolePermissionSerializer(perms, many=True).data
 
@@ -136,7 +141,6 @@ class RegisterSerializer(serializers.ModelSerializer):
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
     Customizes the JWT response to include the full User object.
-    Ensures 'is_superuser' and 'permissions' are sent immediately on login.
     """
     def validate(self, attrs):
         data = super().validate(attrs)

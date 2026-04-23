@@ -15,7 +15,8 @@ from .serializers import (
     UserSerializer,
     RegisterSerializer,
     CustomTokenObtainPairSerializer,
-    RoleSerializer,  # ✅ Added for role permission lookup
+    RoleSerializer,
+    RolePermissionSerializer,  # ✅ Ensure this is imported for RoleDetailView
 )
 from users.utils import generate_activation_link, send_resend_email
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -138,10 +139,30 @@ class CreateUserWithRoleView(generics.CreateAPIView):
 class RoleListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def get(self, request):
-        # ✅ Updated to use RoleSerializer to fetch saved permissions from the DB
         roles_data = [{"id": k, "label": v} for k, v in CustomUser.ROLE_CHOICES]
         serializer = RoleSerializer(roles_data, many=True)
         return Response(serializer.data)
+
+class RoleDetailView(APIView):
+    """
+    ✅ ADDED: Returns full details for a specific role ID.
+    Essential for frontend verification and persistence.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, id):
+        role_id = int(id)
+        label = dict(CustomUser.ROLE_CHOICES).get(role_id, "Unknown Role")
+        
+        # Returns ALL 48+ permissions for this role
+        perms = RoleModulePermission.objects.filter(role_id=role_id)
+        serializer = RolePermissionSerializer(perms, many=True)
+        
+        return Response({
+            "id": role_id,
+            "label": label,
+            "permissions": serializer.data
+        }, status=status.HTTP_200_OK)
 
 class RoleCreateView(APIView):
     permission_classes = [IsAdminUser]
@@ -159,7 +180,7 @@ class AssignRoleView(APIView):
     def put(self, request, id):
         user = get_object_or_404(CustomUser, id=id)
         role = request.data.get("role")
-        with transaction.atomic(): # ✅ Ensure role save commits to Supabase
+        with transaction.atomic(): 
             user.role = int(role)
             user.save()
         log_activity(request.user, "users", "CustomUser", user.id, "update", f"Assigned role {role} to {user.username}")
@@ -179,33 +200,31 @@ class ListPermissionsByAppView(APIView):
         return Response([{"id": p.id, "codename": p.codename, "name": p.name} for p in perms])
 
 class UpdateRolePermissionsView(APIView):
+    """
+    Updates permissions for a specific role. 
+    Uses permission_id to ensure multiple entries per module are allowed.
+    """
     permission_classes = [IsAdminUser]
 
     def put(self, request, id):
         role_id = int(id)
-        # Na'thanuel is sending the array under the key "permissions"
         permissions_data = request.data.get("permissions", [])
         
         if not permissions_data:
             return Response({"detail": "No permissions provided"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            with transaction.atomic():  # ✅ Ensures all 48 items save or none do
+            with transaction.atomic():
                 for perm in permissions_data:
-                    # We extract 'permission' from his JSON to use as our permission_id
-                    p_id = perm.get('permission')
-                    module_name = perm.get('module')
-                    
                     RoleModulePermission.objects.update_or_create(
                         role_id=role_id, 
-                        module=module_name,
-                        permission_id=p_id, # 👈 Now distinct rows per permission ID
+                        module=perm.get('module'),
+                        permission_id=perm.get('permission'), 
                         defaults={
                             'access_level': str(perm.get('access_level'))
                         }
                     )
             
-            # Log the successful bulk update
             log_activity(
                 request.user, 
                 "users", 
@@ -221,27 +240,9 @@ class UpdateRolePermissionsView(APIView):
 
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
-        
-# ─── EMPLOYEE VIEWS ───────────────────────────────────────────
-
-class EmployeeListCreateView(generics.ListCreateAPIView):
-    queryset = Employee.objects.all()
-    serializer_class = EmployeeSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-class EmployeeDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Employee.objects.all()
-    serializer_class = EmployeeSerializer
-    lookup_field = 'id'
-    permission_classes = [permissions.IsAuthenticated]
 
 class SystemPermissionsListView(APIView):
-    """
-    Returns a unified list of all discrete system permissions.
-    """
     permission_classes = [IsAdminUser]
-
     def get(self, request):
         perms = Permission.objects.select_related('content_type').all()
         return Response([
@@ -256,9 +257,6 @@ class SystemPermissionsListView(APIView):
         ], status=status.HTTP_200_OK)
 
 class UpdateRolesPermissionsView(APIView):
-    """
-    Bulk manages permissions across multiple roles at once.
-    """
     permission_classes = [IsAdminUser]
 
     def get(self, request):
@@ -292,7 +290,7 @@ class UpdateRolesPermissionsView(APIView):
                         RoleModulePermission.objects.update_or_create(
                             role_id=role_id, 
                             module=perm.get('module'),
-                            permission_id=perm.get('permission'),  # Distinct rows per ID
+                            permission_id=perm.get('permission'),
                             defaults={
                                 'access_level': str(perm.get('access_level', 'none'))
                             }
@@ -309,3 +307,16 @@ class UpdateRolesPermissionsView(APIView):
             return Response({"detail": "Bulk roles permissions updated successfully"}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# ─── EMPLOYEE VIEWS ───────────────────────────────────────────
+
+class EmployeeListCreateView(generics.ListCreateAPIView):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class EmployeeDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+    lookup_field = 'id'
+    permission_classes = [permissions.IsAuthenticated]
