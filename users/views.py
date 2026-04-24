@@ -145,7 +145,7 @@ class RoleListView(APIView):
 
 class RoleDetailView(APIView):
     """
-    ✅ ADDED: Returns full details for a specific role ID.
+    Returns full details for a specific role ID.
     Essential for frontend verification and persistence.
     """
     permission_classes = [permissions.IsAuthenticated]
@@ -201,8 +201,8 @@ class ListPermissionsByAppView(APIView):
 
 class UpdateRolePermissionsView(APIView):
     """
-    Updates permissions for a specific role. 
-    Uses permission_id to ensure multiple entries per module are allowed.
+    ✅ FIXED: Updates permissions for a specific role. 
+    Uses permission_id in the lookup to prevent overwriting module rows.
     """
     permission_classes = [IsAdminUser]
 
@@ -216,6 +216,7 @@ class UpdateRolePermissionsView(APIView):
         try:
             with transaction.atomic():
                 for perm in permissions_data:
+                    # ✅ The fix: Lookup includes permission_id to ensure rows are distinct
                     RoleModulePermission.objects.update_or_create(
                         role_id=role_id, 
                         module=perm.get('module'),
@@ -287,6 +288,7 @@ class UpdateRolesPermissionsView(APIView):
                         continue
                         
                     for perm in permissions_data:
+                        # ✅ Consistency check: uses permission_id for bulk as well
                         RoleModulePermission.objects.update_or_create(
                             role_id=role_id, 
                             module=perm.get('module'),
