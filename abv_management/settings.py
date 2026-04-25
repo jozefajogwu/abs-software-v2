@@ -3,20 +3,25 @@ Django settings for abv_management project.
 """
 
 import os
+import urllib.parse as urlparse
 from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 import dj_database_url
 
-# Load environment variables
-load_dotenv()
-
 # Build paths inside the project
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# 2. Explicitly point to the .env file
+env_path = BASE_DIR / '.env'
+load_dotenv(dotenv_path=env_path)
 
 # Security
 SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-default-key")
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
+
+# Environment Check
+IS_PRODUCTION = os.getenv('RENDER', 'False').lower() == 'true'
 
 CSRF_TRUSTED_ORIGINS = [
     "https://abs-software-v2-s2qp.onrender.com",
@@ -79,7 +84,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60), # Increased for development
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
@@ -89,7 +94,7 @@ SITE_ID = 1
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware", # Added for static files
+    "whitenoise.middleware.WhiteNoiseMiddleware", # Static files for Render
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -121,18 +126,47 @@ TEMPLATES = [
 WSGI_APPLICATION = "abv_management.wsgi.application"
 
 # ─── DATABASE CONFIGURATION ──────────────────────────────────
-# Using config() is safer than parse() as it handles type casting better.
 
+db_url = os.getenv('SUPABASE_DB_URL')
+print(f"DEBUG: Database URL found: {db_url is not None}")
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL'),
-        conn_max_age=600,
-        ssl_require=True # ✅ Crucial for Supabase
-    )
-}
+if IS_PRODUCTION:
+    # On Render, use the standard dj_database_url logic
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=db_url,
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
+elif db_url:
+    # 🚀 LOCAL FIX: Manually parse the URL to bypass dj_database_url errors on Windows
+    url = urlparse.urlparse(db_url)
+    
+    # URL unquote handles the %2E or other encoded characters safely
+    username = urlparse.unquote(url.username) if url.username else ''
+    password = urlparse.unquote(url.password) if url.password else ''
+    
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': url.path[1:], # Removes the leading slash
+            'USER': username,
+            'PASSWORD': password,
+            'HOST': url.hostname,
+            'PORT': url.port or 5432,
+        }
+    }
+else:
+    # Fallback to SQLite if no URL is provided
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
-# Critical for Supabase connection pooling (Transaction Mode)
+# Critical for Supabase connection pooling
 DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
 
 # Password validation
@@ -148,7 +182,7 @@ LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
-APPEND_SLASH = False
+APPEND_SLASH = True # Set to True to handle missing slashes in URLs
 
 # Static & Media
 STATIC_URL = "static/"
@@ -177,7 +211,7 @@ EMAIL_BACKEND = "anymail.backends.sendinblue.EmailBackend"
 ANYMAIL = {
     "SENDINBLUE_API_KEY": os.getenv("SENDINBLUE_API_KEY"),
 }
-DEFAULT_FROM_EMAIL = "abydiamondmines62@gmail.com"
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "abydiamondmines62@gmail.com")
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-RESEND_FROM_EMAIL = "onboarding@resend.dev"
+RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
