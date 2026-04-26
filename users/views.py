@@ -257,46 +257,36 @@ class SystemPermissionsListView(APIView):
             for p in perms
         ], status=status.HTTP_200_OK)
 
-class UpdateRolesPermissionsView(APIView):
+class UpdateRolePermissionsView(APIView):
+    """
+    Updates permissions for a specific role. 
+    Now safely handles both list and dict payloads.
+    """
     permission_classes = [IsAdminUser]
 
-    def get(self, request):
-        perms = RoleModulePermission.objects.all()
-        return Response([
-            {
-                "id": p.id,
-                "role_id": p.role_id,
-                "module": p.module,
-                "permission_id": p.permission_id,
-                "access_level": p.access_level
-            }
-            for p in perms
-        ], status=status.HTTP_200_OK)
-
-    def put(self, request):
-        payload = request.data
-        if not isinstance(payload, list):
-            return Response({"detail": "Expected a list of role updates."}, status=status.HTTP_400_BAD_REQUEST)
-        
+    def put(self, request, id):
         try:
+            role_id = int(id)
+            
+            # ✅ THE FIX: Handle both array payloads and object payloads safely
+            if isinstance(request.data, list):
+                permissions_data = request.data
+            else:
+                permissions_data = request.data.get("permissions", [])
+            
+            if not permissions_data:
+                return Response({"detail": "No permissions provided"}, status=status.HTTP_400_BAD_REQUEST)
+
             with transaction.atomic():
-                for role_data in payload:
-                    role_id = role_data.get("role_id")
-                    permissions_data = role_data.get("permissions", [])
-                    
-                    if role_id is None:
-                        continue
-                        
-                    for perm in permissions_data:
-                        # ✅ Consistency check: uses permission_id for bulk as well
-                        RoleModulePermission.objects.update_or_create(
-                            role_id=role_id, 
-                            module=perm.get('module'),
-                            permission_id=perm.get('permission'),
-                            defaults={
-                                'access_level': str(perm.get('access_level', 'none'))
-                            }
-                        )
+                for perm in permissions_data:
+                    RoleModulePermission.objects.update_or_create(
+                        role_id=role_id, 
+                        module=perm.get('module'),
+                        permission_id=perm.get('permission'), 
+                        defaults={
+                            'access_level': str(perm.get('access_level', 'none'))
+                        }
+                    )
             
             log_activity(
                 request.user, 
@@ -304,12 +294,16 @@ class UpdateRolesPermissionsView(APIView):
                 "RoleModulePermission", 
                 None, 
                 "update", 
-                f"Bulk updated permissions for {len(payload)} roles"
+                f"Updated {len(permissions_data)} permissions for Role ID {role_id}"
             )
-            return Response({"detail": "Bulk roles permissions updated successfully"}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            
+            return Response({
+                "detail": f"Successfully updated {len(permissions_data)} permissions"
+            }, status=status.HTTP_200_OK)
 
+        except Exception as e:
+            # Safely catch any other errors so it doesn't trigger a CORS block
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 # ─── EMPLOYEE VIEWS ───────────────────────────────────────────
 
 class EmployeeListCreateView(generics.ListCreateAPIView):
