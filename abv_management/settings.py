@@ -105,7 +105,22 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+APPEND_SLASH = True
+
+
+CORS_ALLOW_ALL_ORIGINS = True # Keep this for general safety, but add specific origins below
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  
+    "https://aby-sigma.vercel.app",
+    "https://abs-software-v2-s2qp.onrender.com",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",  # ✅ Required for PUT/POST requests from localhost
+    "https://aby-sigma.vercel.app",
+    "https://abs-software-v2-s2qp.onrender.com",
+]
 ROOT_URLCONF = "abv_management.urls"
 
 TEMPLATES = [
