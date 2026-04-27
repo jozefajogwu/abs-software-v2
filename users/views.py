@@ -16,7 +16,7 @@ from .serializers import (
     RegisterSerializer,
     CustomTokenObtainPairSerializer,
     RoleSerializer,
-    RolePermissionSerializer,  # ✅ Ensure this is imported for RoleDetailView
+    RolePermissionSerializer,
 )
 from users.utils import generate_activation_link, send_resend_email
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -199,49 +199,6 @@ class ListPermissionsByAppView(APIView):
         perms = Permission.objects.filter(content_type__app_label=app_label)
         return Response([{"id": p.id, "codename": p.codename, "name": p.name} for p in perms])
 
-class UpdateRolePermissionsView(APIView):
-    """
-    ✅ FIXED: Updates permissions for a specific role. 
-    Uses permission_id in the lookup to prevent overwriting module rows.
-    """
-    permission_classes = [IsAdminUser]
-
-    def put(self, request, id):
-        role_id = int(id)
-        permissions_data = request.data.get("permissions", [])
-        
-        if not permissions_data:
-            return Response({"detail": "No permissions provided"}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            with transaction.atomic():
-                for perm in permissions_data:
-                    # ✅ The fix: Lookup includes permission_id to ensure rows are distinct
-                    RoleModulePermission.objects.update_or_create(
-                        role_id=role_id, 
-                        module=perm.get('module'),
-                        permission_id=perm.get('permission'), 
-                        defaults={
-                            'access_level': str(perm.get('access_level'))
-                        }
-                    )
-            
-            log_activity(
-                request.user, 
-                "users", 
-                "RoleModulePermission", 
-                None, 
-                "update", 
-                f"Updated {len(permissions_data)} permissions for Role ID {role_id}"
-            )
-            
-            return Response({
-                "detail": f"Successfully updated {len(permissions_data)} permissions"
-            }, status=status.HTTP_200_OK)
-
-        except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
 class SystemPermissionsListView(APIView):
     permission_classes = [IsAdminUser]
     def get(self, request):
@@ -259,8 +216,8 @@ class SystemPermissionsListView(APIView):
 
 class UpdateRolePermissionsView(APIView):
     """
-    Updates permissions for a specific role. 
-    Now safely handles both list and dict payloads.
+    Updates permissions for a SINGLE role. 
+    Safely handles both list and dict payloads to prevent 500/CORS errors.
     """
     permission_classes = [IsAdminUser]
 
@@ -268,7 +225,7 @@ class UpdateRolePermissionsView(APIView):
         try:
             role_id = int(id)
             
-            # ✅ THE FIX: Handle both array payloads and object payloads safely
+            # Handle both array payloads and object payloads safely
             if isinstance(request.data, list):
                 permissions_data = request.data
             else:
@@ -302,8 +259,63 @@ class UpdateRolePermissionsView(APIView):
             }, status=status.HTTP_200_OK)
 
         except Exception as e:
-            # Safely catch any other errors so it doesn't trigger a CORS block
             return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class UpdateRolesPermissionsView(APIView):
+    """
+    Bulk manages permissions across MULTIPLE roles at once.
+    """
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        perms = RoleModulePermission.objects.all()
+        return Response([
+            {
+                "id": p.id,
+                "role_id": p.role_id,
+                "module": p.module,
+                "permission_id": p.permission_id,
+                "access_level": p.access_level
+            }
+            for p in perms
+        ], status=status.HTTP_200_OK)
+
+    def put(self, request):
+        payload = request.data
+        if not isinstance(payload, list):
+            return Response({"detail": "Expected a list of role updates."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            with transaction.atomic():
+                for role_data in payload:
+                    role_id = role_data.get("role_id")
+                    permissions_data = role_data.get("permissions", [])
+                    
+                    if role_id is None:
+                        continue
+                        
+                    for perm in permissions_data:
+                        RoleModulePermission.objects.update_or_create(
+                            role_id=role_id, 
+                            module=perm.get('module'),
+                            permission_id=perm.get('permission'),
+                            defaults={
+                                'access_level': str(perm.get('access_level', 'none'))
+                            }
+                        )
+            
+            log_activity(
+                request.user, 
+                "users", 
+                "RoleModulePermission", 
+                None, 
+                "update", 
+                f"Bulk updated permissions for {len(payload)} roles"
+            )
+            return Response({"detail": "Bulk roles permissions updated successfully"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 # ─── EMPLOYEE VIEWS ───────────────────────────────────────────
 
 class EmployeeListCreateView(generics.ListCreateAPIView):
