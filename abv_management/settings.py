@@ -20,6 +20,10 @@ load_dotenv(dotenv_path=env_path)
 SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-default-key")
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
+
+# This looks for the 'RENDER' variable that Render provides automatically
+IS_PRODUCTION = os.getenv('RENDER', 'False') == 'True'
+
 # Environment Check
 IS_PRODUCTION = os.getenv('RENDER', 'False').lower() == 'true'
 
@@ -34,6 +38,10 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
 ]
+
+
+
+
 
 # Application definition
 INSTALLED_APPS = [
