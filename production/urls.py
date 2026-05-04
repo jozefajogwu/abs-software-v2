@@ -1,9 +1,10 @@
 from django.urls import path
 from .views import (
-    OperationListCreateView, OperationDetailView,
+    DailyProductionRecordListCreateView, OperationListCreateView, OperationDetailView,
     MaintenanceListCreateView, MaintenanceDetailView,
     ProductionListCreateView, ProductionDetailView,
-    OperationSummaryView, MaintenanceSummaryView
+    OperationSummaryView, MaintenanceSummaryView,  
+    DailyProductionRecordDetailView
 )
 
 urlpatterns = [
@@ -20,4 +21,11 @@ urlpatterns = [
     # Production
     path('records/', ProductionListCreateView.as_view(), name='production-list-create'),
     path('records/<int:id>/', ProductionDetailView.as_view(), name='production-detail'),
+    
+    
+
+# Add these to your urlpatterns list:
+    path('daily/', DailyProductionRecordListCreateView.as_view(), name='daily-production-list'),
+    path('daily/<int:id>/', DailyProductionRecordDetailView.as_view(), name='daily-production-detail'),
+
 ]
